@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NRU — Smart Phone Tracking &amp; Data Collection Monitoring</title>
+<link rel="stylesheet" href="_ds/broadsheet-3d70675a-5cf4-4c0c-aa61-673de2c9b619/styles.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
+<script src="./image-slot.js"></script>
+<style>
+:root{
+  --radius-sm:0;--radius-md:0;--radius-lg:0;
+  --ok:var(--color-accent);--warn:var(--color-process-yellow);--bad:var(--color-accent-2);
+  --rail:232px;
+}
+html,body{height:100%}
+body{overflow:hidden}
+button{font:inherit}
+.btn,.input,.seg,.card,.tag,.dialog{border-radius:0}
+.btn{white-space:nowrap}
+.radio .dot{border-radius:0}
+#app{height:100dvh;display:grid;grid-template-rows:auto 1fr;background:var(--color-bg)}
+
+/* ── masthead ─────────────────────────────────────────────── */
+.masthead{display:flex;align-items:stretch;gap:var(--space-4);padding:0 var(--space-4);
+  border-bottom:2px solid var(--color-text);background:var(--color-bg);min-height:66px}
+.mh-mark{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) 0;min-width:0;flex-shrink:1}
+.mh-mark .mh-org{min-width:0;overflow:hidden}
+.mh-seal{width:38px;height:38px;flex:none;border:1px solid var(--color-text);
+  display:grid;place-items:center;font-size:9px;letter-spacing:.06em;text-align:center;line-height:1.05;
+  font-family:var(--font-heading);font-weight:600}
+.mh-org{font-family:var(--font-heading);font-weight:600;font-size:13px;line-height:1.12;letter-spacing:.02em;text-transform:uppercase}
+.mh-org small{display:block;font-size:9.5px;letter-spacing:.14em;color:var(--color-accent-700);font-weight:400}
+.mh-title{display:flex;flex-direction:column;justify-content:center;border-left:1px solid var(--color-divider);
+  padding-left:var(--space-4);min-width:0}
+.mh-title strong{font-family:var(--font-heading);font-size:15px;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mh-title span{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--color-neutral-700)}
+.mh-right{margin-left:auto;display:flex;align-items:center;gap:var(--space-2);min-width:0;flex-shrink:1}
+.mh-clock{font-size:12px;color:var(--color-neutral-700);white-space:nowrap;font-variant-numeric:tabular-nums}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.live i{width:7px;height:7px;background:var(--ok);display:block;animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.icobtn{width:34px;height:34px;display:grid;place-items:center;background:transparent;
+  border:1px solid var(--color-divider);cursor:pointer;color:var(--color-text)}
+.icobtn:hover{background:color-mix(in srgb,var(--color-text) 7%,transparent)}
+.icobtn:active{background:color-mix(in srgb,var(--color-text) 14%,transparent)}
+.burger{display:none}
+
+/* ── shell ────────────────────────────────────────────────── */
+.shell{display:grid;grid-template-columns:var(--rail) 1fr;min-height:0}
+.rail{border-right:1px solid var(--color-divider);padding:var(--space-3) 0;overflow-y:auto;
+  display:flex;flex-direction:column;gap:2px;background:var(--color-bg)}
+.rail h6{padding:0 var(--space-4);margin:var(--space-3) 0 var(--space-1);color:var(--color-neutral-600)}
+.navitem{display:flex;align-items:center;gap:var(--space-2);padding:9px var(--space-4);
+  background:transparent;border:0;border-left:3px solid transparent;cursor:pointer;text-align:left;
+  font-size:14px;color:var(--color-text);width:100%}
+.navitem:hover{background:color-mix(in srgb,var(--color-accent) 9%,transparent)}
+.navitem[aria-current=page]{border-left-color:var(--color-accent);color:var(--color-accent-700);
+  background:color-mix(in srgb,var(--color-accent) 12%,transparent);font-family:var(--font-heading);font-weight:600}
+.navitem b{margin-left:auto;font-size:11px;font-weight:400;color:var(--color-neutral-600);font-variant-numeric:tabular-nums}
+.navitem svg{flex:none}
+main{min-height:0;overflow:auto;display:flex;flex-direction:column}
+.page{padding:var(--space-4) var(--space-6) var(--space-8);display:flex;flex-direction:column;gap:var(--space-4);flex:1;min-height:0}
+.page.flush{padding:0;gap:0}
+.page:not(.flush){flex:0 0 auto}
+.phead{display:flex;align-items:flex-end;gap:var(--space-4);flex-wrap:wrap}
+.phead h2{margin:0}
+.phead p{margin:0;max-width:52ch;font-size:13px;color:var(--color-neutral-700)}
+.phead .spacer{margin-left:auto}
+.kicker{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-accent-700)}
+
+/* ── bits ─────────────────────────────────────────────────── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:var(--space-3) var(--space-6);background:var(--color-bg)}
+.stat{background:transparent;padding:0;border:0}
+.stat b{display:block;font-family:var(--font-heading);font-size:clamp(20px,2vw,30px);line-height:1;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.stat span{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--color-neutral-700)}
+.stat em{font-style:normal;font-size:11px;color:var(--color-accent-700)}
+.dot{width:9px;height:9px;display:inline-block;flex:none}
+.dot.online{background:var(--ok)}.dot.idle{background:var(--warn)}.dot.offline{background:var(--bad)}
+.bar{height:6px;background:var(--color-neutral-300);position:relative;flex:1;min-width:60px}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--color-accent);display:block}
+.bar.warn i{background:var(--warn)}.bar.bad i{background:var(--bad)}
+.row{display:flex;align-items:center;gap:var(--space-2)}
+.mono{font-variant-numeric:tabular-nums;font-size:13px}
+.tbl-wrap{border-top:1px solid var(--color-text);overflow-x:auto;overflow-y:visible;flex:none}
+.table tbody tr{cursor:pointer}
+.table td{white-space:nowrap}
+.table th{white-space:nowrap}
+.chips{display:flex;gap:var(--space-2);flex-wrap:wrap}
+.chip{padding:5px 12px;font-size:12px;border:1px solid var(--color-divider);background:transparent;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;color:var(--color-text)}
+.chip:hover{background:color-mix(in srgb,var(--color-text) 6%,transparent)}
+.chip[aria-pressed=true]{background:var(--color-accent);border-color:var(--color-accent);color:var(--color-bg)}
+.chip[aria-pressed=true] .dot{box-shadow:0 0 0 1px var(--color-bg)}
+.listrow{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);
+  border-bottom:1px solid color-mix(in srgb,var(--color-text) 9%,transparent);cursor:pointer;
+  background:transparent;width:100%;text-align:left;color:var(--color-text)}
+.listrow:hover{background:color-mix(in srgb,var(--color-accent) 8%,transparent)}
+.listrow[aria-selected=true]{background:color-mix(in srgb,var(--color-accent) 15%,transparent);
+  box-shadow:inset 3px 0 0 var(--color-accent)}
+.listrow .who{min-width:0;flex:1}
+.listrow .who b{display:block;font-family:var(--font-heading);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.listrow .who span{font-size:11px;color:var(--color-neutral-700);display:block;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sect{display:flex;flex-direction:column;gap:var(--space-2)}
+.sect > h4{margin:0}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px var(--space-3);font-size:13px}
+.kv dt{color:var(--color-neutral-700);font-size:12px}
+.kv dd{margin:0;font-variant-numeric:tabular-nums}
+.note{font-size:12px;color:var(--color-neutral-700);border-left:2px solid var(--color-accent);padding-left:var(--space-2)}
+
+/* ── map ──────────────────────────────────────────────────── */
+.mapgrid.pane-off{grid-template-columns:1fr}
+.mapgrid.pane-off .mappanel{display:none}
+.railfoot{margin-top:auto;padding:var(--space-3) var(--space-4);border-top:1px solid var(--color-divider);
+  display:flex;flex-direction:column;gap:2px;font-size:11px;line-height:1.35}
+.railfoot b{font-family:var(--font-heading);font-size:13px}
+.rolepick{display:flex;align-items:center;gap:var(--space-2)}
+.rolepick span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-700)}
+.rolepick select{min-height:30px;font-size:12px;width:auto;min-width:0;max-width:186px;background:var(--color-bg);border-color:var(--color-text)}
+.mapgrid{display:grid;grid-template-columns:320px 1fr;flex:1;min-height:0}
+.mappanel{border-right:1px solid var(--color-divider);display:flex;flex-direction:column;min-height:0}
+.mappanel .top{padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2);
+  border-bottom:1px solid var(--color-text)}
+.mappanel .scroll{overflow-y:auto;min-height:0;flex:1}
+.mapstage{position:relative;min-height:320px}
+.leafmap{position:absolute;inset:0;background:var(--color-neutral-200)}
+.leaflet-container{font-family:var(--font-body)}
+.leaflet-tile-pane{transition:filter .3s}
+.view-news .leaflet-tile-pane{filter:grayscale(1) contrast(1.18) brightness(1.06)}
+.view-ink .leaflet-tile-pane{filter:grayscale(1) contrast(.75) brightness(1.12) sepia(.35) hue-rotate(150deg) saturate(2.2)}
+.nolabel .leaflet-tile-pane{filter:grayscale(1) contrast(.9) brightness(1.1) opacity(.55)}
+.mapctl{position:absolute;z-index:500;display:flex;flex-direction:column;gap:1px;background:var(--color-divider);
+  border:1px solid var(--color-text)}
+.mapctl button{width:34px;height:34px;background:var(--color-bg);border:0;cursor:pointer;color:var(--color-text);
+  display:grid;place-items:center;font-size:15px;font-family:var(--font-heading)}
+.mapctl button:hover{background:var(--color-accent);color:var(--color-bg)}
+.mapctl.zoom{top:var(--space-3);right:var(--space-3)}
+.maptools{position:absolute;top:var(--space-3);left:var(--space-3);z-index:500;display:flex;flex-direction:column;gap:var(--space-2);
+  align-items:flex-start;max-width:calc(100% - 90px)}
+.panelbox{background:color-mix(in srgb,var(--color-bg) 92%,transparent);border:1px solid var(--color-text);
+  padding:var(--space-2);display:flex;gap:6px;flex-wrap:wrap;align-items:center;backdrop-filter:blur(3px)}
+.seg2{display:inline-flex;border:1px solid var(--color-text)}
+.seg2 button{padding:5px 11px;font-size:12px;background:var(--color-bg);border:0;cursor:pointer;color:var(--color-text)}
+.seg2 button + button{border-left:1px solid var(--color-divider)}
+.seg2 button[aria-pressed=true]{background:var(--color-text);color:var(--color-bg)}
+.legend{position:absolute;bottom:var(--space-3);left:var(--space-3);z-index:500;font-size:11px;
+  background:color-mix(in srgb,var(--color-bg) 92%,transparent);border:1px solid var(--color-text);padding:var(--space-2);
+  display:flex;flex-direction:column;gap:4px}
+.legend .row{gap:6px}
+.pin{width:16px;height:16px;border:1.5px solid var(--color-bg);box-shadow:0 0 0 1px var(--color-text);
+  display:grid;place-items:center}
+.pin.online{background:var(--ok)}.pin.idle{background:var(--warn)}.pin.offline{background:var(--bad)}
+.pin.sel{outline:3px solid var(--color-text);outline-offset:2px}
+.pin small{color:#fff;font-size:8px;line-height:1}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{border-radius:0;background:var(--color-bg);
+  box-shadow:var(--shadow-md);font-family:var(--font-body)}
+.leaflet-popup-content{margin:10px 12px;font-size:13px}
+.leaflet-bar a,.leaflet-control-attribution{border-radius:0!important}
+.leaflet-control-attribution{font-size:9px;font-family:var(--font-body)}
+
+/* ── drawer ───────────────────────────────────────────────── */
+#scrim{position:fixed;inset:0;background:color-mix(in srgb,var(--color-neutral-900) 34%,transparent);
+  z-index:900;opacity:0;pointer-events:none;transition:opacity .22s}
+#scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(430px,92vw);background:var(--color-bg);
+  border-left:2px solid var(--color-text);box-shadow:var(--shadow-lg);z-index:950;
+  transform:translateX(102%);transition:transform .26s cubic-bezier(.2,.7,.2,1);
+  display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.dr-head{padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-text);
+  display:flex;align-items:flex-start;gap:var(--space-3)}
+.dr-head h3{margin:0;font-size:22px}
+.dr-head .kicker{margin-bottom:3px}
+.dr-body{overflow-y:auto;padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-4);flex:1}
+.dr-foot{padding:var(--space-3) var(--space-4);border-top:1px solid var(--color-divider);
+  display:flex;gap:var(--space-2);flex-wrap:wrap}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--color-divider)}
+.tabs button{padding:8px 12px;background:transparent;border:0;border-bottom:2px solid transparent;cursor:pointer;
+  font-size:13px;color:var(--color-neutral-700)}
+.tabs button[aria-selected=true]{border-bottom-color:var(--color-accent);color:var(--color-accent-700);
+  font-family:var(--font-heading);font-weight:600}
+.spark{display:flex;align-items:flex-end;gap:3px;height:54px}
+.spark i{flex:1;background:var(--color-accent-300);display:block;min-height:2px}
+.spark i.hi{background:var(--color-accent)}
+.trail{display:flex;flex-direction:column;gap:0}
+.trail li{list-style:none;display:grid;grid-template-columns:56px 1fr;gap:var(--space-2);font-size:12px;
+  padding:7px 0;border-bottom:1px solid color-mix(in srgb,var(--color-text) 8%,transparent)}
+.trail time{color:var(--color-neutral-600);font-variant-numeric:tabular-nums}
+ul.plain{margin:0;padding:0}
+ul.plain li{list-style:none}
+
+/* ── phone ────────────────────────────────────────────────── */
+.phonewrap{display:flex;gap:var(--space-6);flex-wrap:wrap;align-items:flex-start}
+.phone{width:344px;border:2px solid var(--color-text);background:var(--color-bg);display:flex;flex-direction:column;
+  height:684px;box-shadow:var(--shadow-md)}
+.phone .sb{display:flex;justify-content:space-between;padding:6px 12px;font-size:11px;
+  border-bottom:1px solid var(--color-divider);font-variant-numeric:tabular-nums}
+.phone .apphead{padding:var(--space-3);border-bottom:1px solid var(--color-text)}
+.phone .body{flex:1;overflow-y:auto}
+.phone .tabbar{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--color-text)}
+.phone .tabbar button{padding:9px 4px;background:transparent;border:0;font-size:10.5px;cursor:pointer;
+  letter-spacing:.04em;text-transform:uppercase;color:var(--color-neutral-700);display:grid;gap:3px;justify-items:center}
+.phone .tabbar button[aria-pressed=true]{background:var(--color-text);color:var(--color-bg)}
+.taskcard{padding:var(--space-3);border-bottom:1px solid color-mix(in srgb,var(--color-text) 10%,transparent);
+  display:flex;flex-direction:column;gap:6px;cursor:pointer;background:transparent;width:100%;text-align:left;color:var(--color-text)}
+.taskcard:hover{background:color-mix(in srgb,var(--color-accent) 8%,transparent)}
+
+/* ── responsive ───────────────────────────────────────────── */
+.av{display:grid;place-items:center;flex:none;overflow:hidden;background:var(--color-neutral-200);
+  border:1px solid var(--color-text);font-family:var(--font-heading);font-weight:600;
+  color:var(--color-neutral-700);line-height:1}
+.av img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(1) contrast(1.06)}
+.av.online{box-shadow:inset 0 -3px 0 var(--ok)}
+.av.idle{box-shadow:inset 0 -3px 0 var(--warn)}
+.av.offline{box-shadow:inset 0 -3px 0 var(--bad)}
+.portrait{width:116px;height:146px;border:1px solid var(--color-text);flex:none}
+.callbar{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3);
+  border:1px solid var(--color-text);background:color-mix(in srgb,var(--color-accent) 8%,transparent)}
+.calltime{font-family:var(--font-heading);font-size:26px;font-variant-numeric:tabular-nums;line-height:1}
+.callkeys{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-2)}
+.callkeys button{padding:10px 0;border:1px solid var(--color-divider);background:transparent;cursor:pointer;
+  font-size:13px;color:var(--color-text);min-height:44px}
+.callkeys button:hover{background:color-mix(in srgb,var(--color-text) 7%,transparent)}
+.photogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:var(--space-4)}
+.photo{display:flex;flex-direction:column;gap:6px;background:transparent;border:0;padding:0;
+  text-align:left;color:var(--color-text);cursor:pointer}
+.photo .frame{position:relative;height:158px;border:1px solid var(--color-text)}
+.photo .stamp{position:absolute;left:0;right:0;bottom:0;padding:4px 6px;font-size:10px;
+  background:color-mix(in srgb,var(--color-bg) 88%,transparent);border-top:1px solid var(--color-text);
+  font-variant-numeric:tabular-nums;pointer-events:none;display:flex;justify-content:space-between;gap:6px}
+.gate{padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-3)}
+.steps{display:flex;gap:6px}
+.steps i{flex:1;height:4px;background:var(--color-neutral-300);display:block}
+.steps i.on{background:var(--color-accent)}
+.toolbar{display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap;margin-bottom:var(--space-2)}
+.note.alert{border-left-color:var(--color-accent-2)}
+
+@media (max-width:1180px){
+  :root{--rail:60px}
+  .navitem{justify-content:center;padding:11px 0;gap:0}
+  .navitem span,.navitem b,.rail h6{display:none}
+  .railfoot{display:none}
+  .rolepick span{display:none}
+  .rolepick select{max-width:132px}
+  .mh-org{display:none}
+  .mh-clock{display:none}
+  .mapgrid{grid-template-columns:274px 1fr}
+  .page{padding:var(--space-4) var(--space-4) var(--space-6)}
+}
+@media (max-width:900px){
+  .mapgrid{grid-template-columns:1fr;grid-template-rows:auto minmax(300px,1fr)}
+  .mapgrid.pane-off{grid-template-rows:1fr}
+  .mappanel{border-right:0;border-bottom:1px solid var(--color-text);max-height:38vh}
+  .mh-title{display:none}
+}
+@media (max-width:680px){
+  .shell{grid-template-columns:1fr}
+  .rail{position:fixed;top:0;bottom:0;left:0;width:230px;z-index:960;background:var(--color-bg);
+    border-right:2px solid var(--color-text);transform:translateX(-102%);transition:transform .24s;padding-top:var(--space-4)}
+  .rail.on{transform:none}
+  .rail h6,.navitem span,.navitem b{display:revert}
+  .railfoot{display:flex}
+  .navitem{justify-content:flex-start;padding:10px var(--space-4);gap:var(--space-2)}
+  .burger{display:grid}
+  .drawer{width:100%;top:auto;height:86dvh;border-left:0;border-top:2px solid var(--color-text);
+    transform:translateY(102%)}
+  .drawer.on{transform:none}
+  .mh-clock{display:none}
+  .page{padding:var(--space-3) var(--space-3) var(--space-6)}
+  .phone{width:100%;max-width:344px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="masthead">
+    <button class="icobtn burger" id="burger" aria-label="Menu">☰</button>
+    <div class="mh-mark">
+      <div class="mh-seal">NRU</div>
+      <div class="mh-org">United Nations<br>and Religions<small>World Organization</small></div>
+    </div>
+    <div class="mh-title">
+      <strong>Smart Phone Tracking &amp; Data Collection Monitoring</strong>
+      <span>Information Technology Department · Control Room</span>
+    </div>
+    <div class="mh-right">
+      <label class="rolepick"><span>Viewing as</span>
+        <select class="input" id="role">
+          <option value="sup">Control-room supervisor</option>
+          <option value="it">Head of IT</option>
+          <option value="mgr">Department manager</option>
+          <option value="dq">Data quality officer</option>
+          <option value="exec">Executive</option>
+          <option value="col">Field collector</option>
+        </select></label>
+      <span class="live"><i></i>Live</span>
+      <span class="mh-clock" id="clock"></span>
+      <button class="icobtn" id="refresh" title="Force refresh">⟳</button>
+    </div>
+  </header>
+  <div class="shell">
+    <nav class="rail" id="rail"></nav>
+    <main id="main"></main>
+  </div>
+</div>
+<div id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="false" aria-label="Details"></aside>
+
+<script>
+/* ══ data ══════════════════════════════════════════════════════════════ */
+const AREA = {Manzini:[-26.4988,31.3800],Matsapha:[-26.5167,31.3060],Mbabane:[-26.3167,31.1333],
+  Ludzeludze:[-26.4700,31.2400],Zombodze:[-26.4180,31.2110],Mkhulamini:[-26.4310,31.4650],Nombulelo:[-26.6100,31.3480]};
+
+const DEVICES = [
+ {ext:'2041',chk:'ok',chkAt:'07:12',chkDist:40,selfie:true,photos:6,id:'NRU-041',user:'Thandeka Dlamini',team:'Manzini North',status:'online',bat:78,sig:4,at:'Manzini',off:[.004,-.006],rec:34,tgt:40,q:0,flags:0,seen:0,hw:'Samsung A14',os:'Android 14',acc:6,shift:'07:12',km:14.2,geo:'Manzini CBD'},
+ {ext:'2017',chk:'ok',chkAt:'06:58',chkDist:120,selfie:true,photos:4,id:'NRU-017',user:'Sipho Nkambule',team:'Matsapha Industrial',status:'online',bat:52,sig:3,at:'Matsapha',off:[-.005,.004],rec:28,tgt:35,q:2,flags:1,seen:1,hw:'Tecno Spark 10',os:'Android 13',acc:9,shift:'06:58',km:9.6,geo:'Matsapha Zone'},
+ {ext:'2008',chk:'ok',chkAt:'07:02',chkDist:85,selfie:true,photos:7,id:'NRU-008',user:'Lindiwe Maseko',team:'Mbabane Central',status:'online',bat:91,sig:5,at:'Mbabane',off:[.003,.005],rec:41,tgt:40,q:0,flags:0,seen:0,hw:'Samsung A34',os:'Android 14',acc:4,shift:'07:02',km:11.8,geo:'Mbabane Hilltop'},
+ {ext:'2023',chk:'out',chkAt:'07:44',chkDist:2400,selfie:false,photos:1,id:'NRU-023',user:'Musa Simelane',team:'Manzini North',status:'idle',bat:34,sig:2,at:'Ludzeludze',off:[.006,.008],rec:12,tgt:30,q:5,flags:2,seen:23,hw:'Nokia G22',os:'Android 13',acc:22,shift:'07:44',km:6.1,geo:'—'},
+ {ext:'2055',chk:'ok',chkAt:'07:20',chkDist:260,selfie:true,photos:3,id:'NRU-055',user:'Nomcebo Gama',team:'Rural South',status:'online',bat:63,sig:3,at:'Nombulelo',off:[-.007,.003],rec:19,tgt:25,q:1,flags:0,seen:2,hw:'Tecno Pop 8',os:'Android 14',acc:12,shift:'07:20',km:22.4,geo:'Nombulelo Ward'},
+ {ext:'2062',chk:'stale',chkAt:'06:40',chkDist:180,selfie:true,photos:2,id:'NRU-062',user:'Bhekithemba Zwane',team:'Rural South',status:'offline',bat:11,sig:0,at:'Mkhulamini',off:[.008,-.004],rec:8,tgt:25,q:9,flags:3,seen:96,hw:'Itel A60',os:'Android 12',acc:48,shift:'06:40',km:17.9,geo:'—'},
+ {ext:'2031',chk:'ok',chkAt:'07:05',chkDist:95,selfie:true,photos:5,id:'NRU-031',user:'Phindile Mnisi',team:'Matsapha Industrial',status:'online',bat:70,sig:4,at:'Matsapha',off:[.006,.007],rec:31,tgt:35,q:0,flags:0,seen:1,hw:'Samsung A14',os:'Android 14',acc:7,shift:'07:05',km:8.3,geo:'Matsapha Zone'},
+ {ext:'2074',chk:'ok',chkAt:'07:35',chkDist:150,selfie:true,photos:3,id:'NRU-074',user:'Sandile Magagula',team:'Mbabane Central',status:'idle',bat:45,sig:2,at:'Mbabane',off:[-.008,-.006],rec:22,tgt:40,q:3,flags:1,seen:17,hw:'Xiaomi Redmi 12',os:'Android 14',acc:19,shift:'07:35',km:5.4,geo:'Mbabane Hilltop'},
+ {ext:'2012',chk:'ok',chkAt:'06:52',chkDist:60,selfie:true,photos:6,id:'NRU-012',user:'Zanele Khumalo',team:'Manzini North',status:'online',bat:88,sig:5,at:'Manzini',off:[-.006,.009],rec:37,tgt:40,q:0,flags:0,seen:0,hw:'Samsung A34',os:'Android 14',acc:5,shift:'06:52',km:12.7,geo:'Manzini CBD'},
+ {ext:'2090',chk:'out',chkAt:'07:28',chkDist:3100,selfie:false,photos:2,id:'NRU-090',user:'Mandla Ngcamphalala',team:'Rural South',status:'online',bat:29,sig:2,at:'Zombodze',off:[.004,.004],rec:15,tgt:25,q:4,flags:1,seen:4,hw:'Tecno Spark 10',os:'Android 13',acc:15,shift:'07:28',km:19.1,geo:'—'},
+ {ext:'2105',chk:'fail',chkAt:'06:30',chkDist:null,selfie:false,photos:0,id:'NRU-105',user:'Ayanda Shongwe',team:'Matsapha Industrial',status:'offline',bat:0,sig:0,at:'Matsapha',off:[-.003,-.008],rec:6,tgt:35,q:11,flags:2,seen:214,hw:'Itel A60',os:'Android 12',acc:60,shift:'06:30',km:3.2,geo:'—'},
+ {ext:'2118',chk:'ok',chkAt:'07:16',chkDist:75,selfie:true,photos:4,id:'NRU-118',user:'Themba Mkhonta',team:'Manzini North',status:'online',bat:57,sig:3,at:'Manzini',off:[.009,.002],rec:26,tgt:40,q:1,flags:0,seen:1,hw:'Nokia G22',os:'Android 13',acc:11,shift:'07:16',km:10.5,geo:'Manzini CBD'},
+];
+DEVICES.forEach(d=>{const b=AREA[d.at];d.lat=b[0]+d.off[0];d.lng=b[1]+d.off[1];});
+
+/* every employee device, not only the dispatched field handsets */
+const STAFF = [
+ {id:'NRU-201',user:'Ntokozo Dube',dept:'Information Technology',role:'Head of IT',site:'HQ Mbabane',ext:'2201',dev:'Samsung A54',kind:'Office',zone:'HQ Mbabane campus',inside:true,chk:'ok',chkAt:'07:48',status:'online',bat:82},
+ {id:'NRU-202',user:'Gcina Mahlalela',dept:'Information Technology',role:'Control-room supervisor',site:'HQ Mbabane',ext:'2202',dev:'Samsung A34',kind:'Office',zone:'HQ Mbabane campus',inside:true,chk:'ok',chkAt:'06:44',status:'online',bat:64},
+ {id:'NRU-210',user:'Lomvula Fakudze',dept:'Programmes',role:'Department manager',site:'HQ Mbabane',ext:'2210',dev:'Xiaomi Redmi 12',kind:'Office',zone:'HQ Mbabane campus',inside:true,chk:'ok',chkAt:'07:55',status:'online',bat:47},
+ {id:'NRU-214',user:'Sibusiso Ndlovu',dept:'WASH / Health',role:'Department manager',site:'Manzini office',ext:'2214',dev:'Samsung A14',kind:'Office',zone:'Manzini office',inside:false,chk:'out',chkAt:'08:20',status:'online',bat:38},
+ {id:'NRU-221',user:'Nokwanda Vilakati',dept:'Data quality',role:'Quality officer',site:'HQ Mbabane',ext:'2221',dev:'Tecno Spark 10',kind:'Office',zone:'HQ Mbabane campus',inside:true,chk:'ok',chkAt:'07:31',status:'online',bat:73},
+ {id:'NRU-230',user:'Vusi Hlophe',dept:'Fleet management',role:'Driver',site:'Matsapha depot',ext:'2230',dev:'Nokia G22',kind:'Vehicle',zone:'Matsapha depot',inside:true,chk:'ok',chkAt:'06:20',status:'online',bat:55},
+ {id:'NRU-231',user:'Petros Dlamini',dept:'Fleet management',role:'Driver',site:'Matsapha depot',ext:'2231',dev:'Itel A60',kind:'Vehicle',zone:'Matsapha depot',inside:false,chk:'stale',chkAt:'06:05',status:'idle',bat:21},
+ {id:'NRU-240',user:'Nomsa Ginindza',dept:'Procurement',role:'Buyer',site:'HQ Mbabane',ext:'2240',dev:'Samsung A34',kind:'Office',zone:'HQ Mbabane campus',inside:true,chk:'ok',chkAt:'08:02',status:'online',bat:90},
+ {id:'NRU-245',user:'Bongani Shabangu',dept:'Accounts',role:'Accounts clerk',site:'HQ Mbabane',ext:'2245',dev:'Tecno Pop 8',kind:'Office',zone:'HQ Mbabane campus',inside:true,chk:'ok',chkAt:'07:58',status:'online',bat:66},
+ {id:'NRU-250',user:'Thulani Mavuso',dept:'Security',role:'Site officer',site:'Manzini office',ext:'2250',dev:'Nokia G22',kind:'Office',zone:'Manzini office',inside:true,chk:'ok',chkAt:'05:50',status:'online',bat:44},
+];
+const everyone=()=>DEVICES.map(d=>({id:d.id,user:d.user,dept:d.team,role:'Field data collector',site:d.at,ext:d.ext,
+  dev:d.hw,kind:'Field',zone:d.geo==='\u2014'?'\u2014':d.geo,inside:d.geo!=='\u2014',chk:d.chk,chkAt:d.chkAt,status:d.status,bat:d.bat}))
+  .concat(STAFF);
+
+const CALLS = [
+ {id:'CL-4471',dir:'in',who:'Thandeka Dlamini',ext:'2041',with:'Control room',start:'09:38',dur:'4:12',kind:'Handset \u2192 control room',note:'Reported a locked gate at household 114; supervisor reassigned the address.',cost:0},
+ {id:'CL-4470',dir:'out',who:'Musa Simelane',ext:'2023',with:'Gcina Mahlalela',start:'09:14',dur:'2:48',kind:'Control room \u2192 handset',note:'Asked why the handset checked in 2.4 km outside GF-01.',cost:0},
+ {id:'CL-4468',dir:'out',who:'Bhekithemba Zwane',ext:'2062',with:'Control room',start:'08:52',dur:'0:00',kind:'Unreachable \u2014 no data',note:'Handset offline. Call queued; the collector will see a missed-call card at next sync.',cost:0},
+ {id:'CL-4465',dir:'in',who:'Nomcebo Gama',ext:'2055',with:'Nokwanda Vilakati',start:'08:31',dur:'6:05',kind:'Handset \u2192 quality desk',note:'Walked through a duplicate water-point reading before resubmitting.',cost:0},
+ {id:'CL-4462',dir:'grp',who:'Manzini North team',ext:'\u2014',with:'4 participants',start:'07:30',dur:'11:20',kind:'Morning team briefing',note:'Daily stand-up over the data connection \u2014 no airtime consumed.',cost:0},
+ {id:'CL-4459',dir:'out',who:'Nkonyeni Stationers',ext:'\u2014',with:'Procurement',start:'07:05',dur:'3:40',kind:'VoIP \u2192 external number',kindOut:true,note:'Breakout to the public network via the SIP trunk \u2014 the only class of call that costs anything.',cost:2.4},
+];
+
+const PROOF = [
+ {id:'PF-2214',dev:'NRU-041',form:'MB-114',what:'Household frontage',time:'09:58',zone:'Manzini CBD',acc:6,state:'accepted'},
+ {id:'PF-2213',dev:'NRU-041',form:'MB-112',what:'Water meter reading',time:'09:27',zone:'Manzini CBD',acc:8,state:'accepted'},
+ {id:'PF-2211',dev:'NRU-008',form:'CL-041',what:'Clinic store shelves',time:'09:12',zone:'Mbabane Hilltop',acc:4,state:'accepted'},
+ {id:'PF-2209',dev:'NRU-023',form:'MB-114',what:'Household frontage',time:'09:05',zone:'\u2014',acc:22,state:'flagged'},
+ {id:'PF-2206',dev:'NRU-055',form:'WP-072',what:'Water point condition',time:'08:44',zone:'Nombulelo Ward',acc:12,state:'accepted'},
+ {id:'PF-2204',dev:'NRU-090',form:'WP-071',what:'Water point condition',time:'08:02',zone:'\u2014',acc:15,state:'flagged'},
+ {id:'PF-2201',dev:'NRU-031',form:'AR-233',what:'Faith-community asset',time:'07:51',zone:'Matsapha Zone',acc:7,state:'accepted'},
+ {id:'PF-2198',dev:'NRU-012',form:'MB-108',what:'Household frontage',time:'07:36',zone:'Manzini CBD',acc:5,state:'accepted'},
+];
+const POLICY={radius:150,selfie:true,recheck:4,offline:'Allow \u2014 confirm at next sync',photoMin:1};
+
+const GEOFENCES = [
+ {id:'GF-01',name:'Manzini CBD',at:'Manzini',r:2100,team:'Manzini North',inside:4,rule:'Exit alert',alerts:1,active:true},
+ {id:'GF-02',name:'Matsapha Zone',at:'Matsapha',r:2600,team:'Matsapha Industrial',inside:3,rule:'Exit alert',alerts:2,active:true},
+ {id:'GF-03',name:'Mbabane Hilltop',at:'Mbabane',r:1900,team:'Mbabane Central',inside:2,rule:'Dwell > 45 min',alerts:0,active:true},
+ {id:'GF-04',name:'Nombulelo Ward',at:'Nombulelo',r:3200,team:'Rural South',inside:1,rule:'Entry log only',alerts:0,active:false},
+ {id:'GF-05',name:'HQ Mbabane campus',at:'Mbabane',r:600,team:'Head office staff',inside:6,rule:'Check-in required',alerts:0,active:true,kind:'office'},
+ {id:'GF-06',name:'Manzini office',at:'Manzini',r:550,team:'Manzini office staff',inside:2,rule:'Check-in required',alerts:1,active:true,kind:'office'},
+ {id:'GF-07',name:'Matsapha depot',at:'Matsapha',r:800,team:'Fleet & drivers',inside:2,rule:'Vehicle dwell + exit alert',alerts:1,active:true,kind:'office'},
+];
+const ALERTS = [
+ {id:'AL-3391',sev:'high',t:'09:41',dev:'NRU-062',kind:'Device offline 1 h 36 m',where:'Mkhulamini',note:'Last fix 48 m accuracy, battery 11% at drop-off. 9 submissions still queued on the handset.'},
+ {id:'AL-3390',sev:'high',t:'09:22',dev:'NRU-105',kind:'Geofence exit — Matsapha Zone',where:'Matsapha',note:'Handset left the assigned zone at 08:53 and has not reported since. Battery depleted.'},
+ {id:'AL-3388',sev:'med',t:'09:05',dev:'NRU-023',kind:'GPS mismatch on submission',where:'Ludzeludze',note:'Form MB-114 recorded a household 2.4 km from the enumerator position at submission time.'},
+ {id:'AL-3385',sev:'med',t:'08:47',dev:'NRU-090',kind:'Battery below 30%',where:'Zombodze',note:'No charging event logged this shift. Field power bank not issued.'},
+ {id:'AL-3381',sev:'low',t:'08:12',dev:'NRU-074',kind:'Idle 17 min inside zone',where:'Mbabane',note:'Dwell threshold for GF-03 is 45 minutes — informational only.'},
+];
+const ASSIGNMENTS = [
+ {id:'AS-2201',name:'Household needs survey — Manzini North',dept:'Programmes',due:'Aug 21',team:'Manzini North',devs:['NRU-041','NRU-012','NRU-118','NRU-023'],done:109,tgt:150,flags:2,status:'On track'},
+ {id:'AS-2202',name:'Faith-community asset register',dept:'Partnerships',due:'Aug 20',team:'Matsapha Industrial',devs:['NRU-017','NRU-031','NRU-105'],done:65,tgt:105,flags:3,status:'At risk'},
+ {id:'AS-2203',name:'Clinic supply verification',dept:'Health',due:'Aug 19',team:'Mbabane Central',devs:['NRU-008','NRU-074'],done:63,tgt:80,flags:1,status:'On track'},
+ {id:'AS-2204',name:'Rural water point audit',dept:'WASH',due:'Aug 24',team:'Rural South',devs:['NRU-055','NRU-062','NRU-090'],done:42,tgt:75,flags:4,status:'Behind'},
+];
+const SYNC = [
+ {id:'SQ-8841',dev:'NRU-105',form:'Asset register',items:11,size:'4.2 MB',age:'3 h 12 m',reason:'No network since 08:53',tries:6},
+ {id:'SQ-8839',dev:'NRU-062',form:'Water point audit',items:9,size:'3.6 MB',age:'1 h 36 m',reason:'Handset offline',tries:4},
+ {id:'SQ-8836',dev:'NRU-023',form:'Household needs',items:5,size:'1.9 MB',age:'42 m',reason:'2G only — photo upload stalled',tries:3},
+ {id:'SQ-8834',dev:'NRU-090',form:'Water point audit',items:4,size:'1.4 MB',age:'28 m',reason:'Retrying — 2 of 4 sent',tries:2},
+ {id:'SQ-8830',dev:'NRU-074',form:'Clinic verification',items:3,size:'0.9 MB',age:'19 m',reason:'Waiting for Wi-Fi policy window',tries:1},
+ {id:'SQ-8829',dev:'NRU-017',form:'Asset register',items:2,size:'0.6 MB',age:'11 m',reason:'Retrying',tries:1},
+];
+const FLAGS = [
+ {id:'DQ-551',rec:'MB-114',dev:'NRU-023',type:'GPS mismatch',dist:'2.4 km',when:'09:05',sev:'high',note:'Household coordinates fall outside the enumerator track for the whole shift.'},
+ {id:'DQ-549',rec:'MB-098',dev:'NRU-062',type:'Stale fix attached',dist:'—',when:'08:36',sev:'high',note:'Location timestamp is 41 minutes older than the submission timestamp.'},
+ {id:'DQ-547',rec:'AR-233',dev:'NRU-105',type:'Accuracy > 50 m',dist:'—',when:'08:20',sev:'med',note:'Fix taken indoors; no GNSS lock, cell-tower position only.'},
+ {id:'DQ-544',rec:'WP-071',dev:'NRU-090',type:'Duplicate coordinates',dist:'0 m',when:'08:02',sev:'med',note:'Two water points submitted at an identical position 6 minutes apart.'},
+ {id:'DQ-540',rec:'MB-087',dev:'NRU-074',type:'Speed implausible',dist:'—',when:'07:51',sev:'low',note:'Track implies 96 km/h between two submissions on a footpath route.'},
+];
+const USERS = [
+ {id:'U-01',dev:'NRU-201',emp:'E-0114',name:'Ntokozo Dube',role:'Head of IT',key:'head_of_it',rule:1,
+  title:'Head of Information Technology',unit:'Information Technology',scope:'All departments',mfa:true,last:'09:44'},
+ {id:'U-02',dev:'NRU-202',emp:'E-0231',name:'Gcina Mahlalela',role:'Control-room supervisor',key:'control_room_supervisor',rule:2,
+  title:'Control-room supervisor',unit:'Information Technology',scope:'All field teams',mfa:true,last:'09:39'},
+ {id:'U-03',dev:'NRU-210',emp:'E-0402',name:'Lomvula Fakudze',role:'Department manager',key:'department_manager',rule:5,
+  title:'Programmes manager',unit:'Programmes',scope:'Programmes',mfa:true,last:'08:58'},
+ {id:'U-04',dev:'NRU-214',emp:'E-0455',name:'Sibusiso Ndlovu',role:'Department manager',key:'department_manager',rule:5,
+  title:'WASH &amp; Health manager',unit:'WASH / Health',scope:'WASH, Health',mfa:false,last:'Yesterday'},
+ {id:'U-05',dev:'NRU-221',emp:'E-0508',name:'Nokwanda Vilakati',role:'Data quality officer',key:'data_quality_officer',rule:3,
+  title:'Data quality officer',unit:'Data quality',scope:'All submissions (read)',mfa:true,last:'09:12'},
+ {id:'U-06',dev:'NRU-041',emp:'E-06xx',name:'Field collectors (12)',role:'Field collector',key:'field_collector',rule:6,
+  title:'Field data collector',unit:'Field teams',scope:'Own assignment only',mfa:false,last:'Live'},
+ {id:'U-07',dev:'NRU-245',emp:'E-07xx',name:'Staff device holders (9)',role:'Staff device holder',key:'staff_device_holder',rule:7,
+  title:'Various — office, depot, vehicle',unit:'Across the organisation',scope:'Own device only — no console',mfa:false,last:'—'},
+ {id:'U-08',dev:'NRU-210',emp:'E-0102',name:'Thulisile Nxumalo',role:'Executive',key:'executive',rule:4,
+  title:'Deputy Secretary-General',unit:'Executive office',scope:'Organisation, aggregate only',mfa:true,last:'08:22'},
+];
+const RULES={1:'Unit = Information Technology, title contains \u201cHead of IT\u201d',
+ 2:'Unit = Information Technology, title contains \u201cControl room\u201d',
+ 3:'Title contains \u201cData quality\u201d',4:'Grade \u2265 senior management',
+ 5:'Named in HRIS as line manager for \u2265 1 active employee',
+ 6:'Job family = field data collection / enumeration',7:'Any other active employee'};
+const COLS=['Head of IT','Supervisor','Dept manager','Quality officer','Executive','Collector','Staff holder'];
+const PERMS = [
+ ['location.live.view','Live location of any handset',1,1,0,0,0,0,0],
+ ['location.history.view','Location history / playback',1,1,0,0,0,0,0],
+ ['checkin.override.grant','Grant a check-in override',1,1,0,0,0,0,0],
+ ['geofence.manage','Manage geofences &amp; alert rules',1,1,0,0,0,0,0],
+ ['assignment.manage','Assign &amp; reassign tasks',1,1,1,0,0,0,0],
+ ['evidence.view','View photographic evidence',1,1,1,1,0,0,0],
+ ['quality.resolve','Resolve data-quality flags',1,1,1,1,0,0,0],
+ ['aggregate.view','View organisation aggregates',1,1,1,1,1,0,0],
+ ['report.export','Export reports (PDF / CSV)',1,1,1,1,1,0,0],
+ ['submission.own.create','Collect and submit records',0,0,0,0,0,1,0],
+ ['checkin.own.submit','Confirm own location at login',0,0,0,0,0,1,1],
+ ['voice.call','Place on-net calls',1,1,1,1,1,1,1],
+ ['admin.roles','Change the role\u2192permission policy',1,0,0,0,0,0,0],
+];
+const ELEV=[
+ {who:'Sibusiso Ndlovu',what:'Control-room supervisor',why:'Covering leave \u2014 delegated in HRIS',until:'26 Aug',kind:'Delegation'},
+ {who:'Nomsa Ginindza',what:'Report export, Fleet scope',why:'Quarter-end fleet costing',until:'31 Aug',kind:'Elevation'},
+];
+const TRAIL = [
+ ['07:12','Shift start — Manzini depot',[-26.4930,31.3742],'Handset check-in, battery 100%'],
+ ['07:38','Entered GF-01 Manzini CBD',[-26.4962,31.3781],'Geofence entry logged'],
+ ['08:04','Submission MB-101',[-26.4988,31.3803],'Accuracy 6 m'],
+ ['08:31','Submission MB-104',[-26.5024,31.3835],'Accuracy 5 m'],
+ ['09:02','Idle 11 min',[-26.5051,31.3861],'Stationary, screen off'],
+ ['09:27','Submission MB-109',[-26.5079,31.3894],'Accuracy 8 m'],
+ ['09:58','Submission MB-112',[-26.5108,31.3926],'Accuracy 6 m, 2 photos'],
+ ['10:24','Moving north-west',[-26.5062,31.3888],'Speed 18 km/h'],
+ ['10:47','Current position',[-26.5028,31.3846],'Accuracy 6 m, battery 78%'],
+];
+const HOURLY=[3,5,8,11,14,17,19,22,26,24,21,18];
+
+/* ══ state ═════════════════════════════════════════════════════════════ */
+const S={
+  screen:localStorage.getItem('nru.track.screen')||'map',
+  role:'sup', /* validated against ROLES below \u2014 a stale key must not crash the app */
+  filters:new Set(['online','idle','offline']),
+  base:'street', view:'plain', pane:true, layers:{geo:true,trail:true,labels:true},
+  sel:null, drawer:null, tab:0, play:false, tIdx:TRAIL.length-1, collectorTab:0,
+  shift:false, gate:0, gateFix:false, staffFilter:'all', proofFilter:'all',
+};
+const BASES={
+  street:{url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',attr:'© OpenStreetMap contributors',max:18},
+  sat:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attr:'Imagery © Esri, Maxar, Earthstar Geographics',max:19},
+  terrain:{url:'https://tile.opentopomap.org/{z}/{x}/{y}.png',
+    attr:'© OpenTopoMap (CC-BY-SA) · © OpenStreetMap contributors',max:17},
+};
+const BASELIST=[['street','Street'],['sat','Satellite'],['terrain','Terrain']];
+const ROLES={
+  sup:{label:'Control-room supervisor',who:'Gcina Mahlalela',scope:'All field teams · full location access',
+    screens:['map','devices','alerts','history','checkin','staff','assign','sync','quality','proof','reports','admin','collector']},
+  it:{label:'Head of IT',who:'Ntokozo Dube',scope:'All departments · system owner',
+    screens:['map','devices','alerts','history','checkin','staff','assign','sync','quality','proof','reports','admin','collector']},
+  mgr:{label:'Department manager',who:'Lomvula Fakudze',scope:'Programmes · progress only, no live location',
+    screens:['checkin','assign','sync','quality','proof','reports','collector']},
+  dq:{label:'Data quality officer',who:'Nokwanda Vilakati',scope:'All submissions · read only',
+    screens:['quality','proof','sync','reports']},
+  exec:{label:'Executive',who:'Executive viewer',scope:'Organisation totals · no individual tracking',
+    screens:['exec','reports']},
+  col:{label:'Field collector',who:'Thandeka Dlamini',scope:'Own assignment · own handset',
+    screens:['collector']},
+};
+const allowed=k=>ROLES[S.role].screens.includes(k);
+const NAV=[
+ ['Monitoring',[['map','Live map','◎',()=>DEVICES.filter(d=>d.status==='online').length],
+   ['devices','Handsets','▤',()=>DEVICES.length],
+   ['alerts','Geofences & alerts','◇',()=>ALERTS.length],
+   ['history','Location history','⤳',null]]],
+ ['Collection',[['assign','Assignments','▦',()=>ASSIGNMENTS.length],
+   ['sync','Offline sync queue','⇅',()=>SYNC.reduce((a,b)=>a+b.items,0)],
+   ['quality','Data quality','!',()=>FLAGS.length],
+   ['proof','Photo proof','\u25a3',()=>PROOF.length],
+   ['reports','Reports & export','▧',null]]],
+ ['Workforce',[['checkin','Shift check-in','✓',()=>DEVICES.filter(d=>d.chk!=='ok').length],
+   ['staff','All employee devices','⌂',()=>everyone().length]]],
+ ['Administration',[['admin','Users & permissions','◈',()=>USERS.length],
+   ['exec','Executive overview','△',null],
+   ['collector','Collector app','▭',null]]],
+];
+const $=s=>document.querySelector(s), main=$('#main'), drawer=$('#drawer'), scrim=$('#scrim'), rail=$('#rail');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dev=id=>DEVICES.find(d=>d.id===id);
+const seen=m=>m===0?'just now':m<60?m+' min ago':Math.floor(m/60)+' h '+(m%60)+' m ago';
+const batCls=b=>b<20?'bad':b<40?'warn':'';
+let PHOTOS={};
+const initials=n=>n.split(/\s+/).slice(0,2).map(w=>w[0]).join('');
+function avatar(id,name,size,status){
+  const p=PHOTOS['emp-'+id];
+  return `<span class="av ${status||''}" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.36)}px">${
+    p?`<img src="${p}" alt="">`:esc(initials(name))}</span>`;
+}
+function loadPhotos(){
+  fetch('.image-slots.state.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{
+    if(!j)return; let got=false;
+    Object.entries(j).forEach(([k,v])=>{const u=typeof v==='string'?v:(v&&v.u);
+      if(u&&String(u).startsWith('data:image/')){PHOTOS[k]=u;got=true;}});
+    if(got){render();if(S.drawer)paintDrawer();}
+  }).catch(()=>{});
+}
+const chkTag=c=>c==='ok'?'<span class="tag tag-accent">Confirmed</span>'
+  :c==='out'?'<span class="tag tag-accent-2">Outside zone</span>'
+  :c==='stale'?'<span class="tag tag-neutral">Re-confirmation due</span>'
+  :'<span class="tag tag-accent-2">Blocked</span>';
+const chkWord=c=>({ok:'Confirmed in zone',out:'Outside assigned zone',stale:'Re-confirmation due',fail:'Login blocked'})[c];
+const person=id=>everyone().find(p=>p.id===id);
+function callBack(c){ /* resolve the other party by extension across every employee device */
+  const p=everyone().find(x=>x.ext===c.ext);
+  if(p)return `<button class="btn btn-primary" data-call="${p.id}">Call ${esc(p.user.split(' ')[0])} back</button>`;
+  if(c.dir==='grp')return '<button class="btn btn-primary" data-act="Rejoining the team call — 4 participants, on-net">Rejoin team call</button>';
+  return '<button class="btn btn-primary" data-act="Dialling the external number over the SIP trunk — billed centrally, not to the handset">Call via trunk</button>';
+}
+function callHistory(name){
+  const cs=CALLS.filter(c=>c.who===name);
+  if(!cs.length)return '<div class="sect"><h4>Voice</h4><div class="text-muted" style="font-size:13px">No calls today. Voice runs on the data bundle — on-net calls cost nothing beyond it.</div></div>';
+  return `<div class="sect"><h4>Voice — today</h4>${cs.map(c=>
+    `<button class="listrow" data-drawer="call:${c.id}"><span class="mono" style="width:42px;color:var(--color-neutral-600)">${c.start}</span>
+      <span class="who"><b>${esc(c.kind)}</b><span>${c.dur==='0:00'?'no answer':c.dur+' · '+(c.cost?'E '+c.cost.toFixed(2):'no charge')}</span></span>
+      <span class="tag ${c.kindOut?'tag-neutral':'tag-accent'}">${c.kindOut?'Trunk':'On-net'}</span></button>`).join('')}</div>`;
+}
+function zoneOf(d){ /* a handset's assigned zone is its team's geofence, not where it happens to be */
+  const g=GEOFENCES.find(g=>g.team===d.team);
+  return g?g.name+' ('+g.id+')':d.geo;}
+const sevTag=s=>s==='high'?'tag-accent-2':s==='med'?'tag-neutral':'tag-accent';
+
+/* ══ chrome ════════════════════════════════════════════════════════════ */
+function renderNav(){
+  rail.innerHTML=NAV.map(([grp,items])=>{
+    const vis=items.filter(([k])=>allowed(k)); if(!vis.length)return '';
+    return '<h6>'+grp+'</h6>'+vis.map(([k,label,ico,count])=>
+    `<button class="navitem" data-nav="${k}" ${S.screen===k?'aria-current="page"':''} title="${label}">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><text x="8" y="12" text-anchor="middle" font-size="13" fill="currentColor">${ico}</text></svg>
+      <span>${label}</span>${count?`<b>${count()}</b>`:''}</button>`).join('');
+  }).join('')+
+  `<div class="railfoot"><div class="kicker">Signed in as</div><b>${esc(ROLES[S.role].who)}</b>
+     <span>${ROLES[S.role].label}</span><span class="text-muted">${ROLES[S.role].scope}</span></div>`;
+}
+function tick(){
+  const d=new Date();
+  $('#clock').textContent=d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+' · Mbabane';
+}
+setInterval(tick,10000); tick();
+
+function go(k){
+  if(!allowed(k)){openDrawer('act','The '+ROLES[S.role].label+' role cannot open that view. Ask the Head of IT for access.');return;}
+  S.screen=k;localStorage.setItem('nru.track.screen',k);rail.classList.remove('on');closeDrawer();renderNav();render();}
+
+/* ══ drawer ════════════════════════════════════════════════════════════ */
+function openDrawer(kind,id){S.drawer={kind,id};S.tab=0;paintDrawer();drawer.classList.add('on');scrim.classList.add('on');}
+function closeDrawer(){S.drawer=null;drawer.classList.remove('on');scrim.classList.remove('on');
+  document.querySelectorAll('[aria-selected=true]').forEach(e=>e.setAttribute('aria-selected','false'));}
+scrim.onclick=closeDrawer;
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
+
+function drawerShell(kicker,title,sub,tabs,body,foot){
+  return `<div class="dr-head"><div style="flex:1;min-width:0">
+      <div class="kicker">${kicker}</div><h3>${title}</h3>
+      <div class="text-muted" style="font-size:12px">${sub}</div></div>
+      <button class="icobtn" data-close aria-label="Close">✕</button></div>
+    ${tabs?`<div class="tabs" style="padding:0 var(--space-4)">${tabs.map((t,i)=>`<button data-tab="${i}" aria-selected="${S.tab===i}">${t}</button>`).join('')}</div>`:''}
+    <div class="dr-body">${body}</div>
+    ${foot?`<div class="dr-foot">${foot}</div>`:''}`;
+}
+const kvRow=(k,v)=>`<dt>${k}</dt><dd>${v}</dd>`;
+function barRow(label,val,max,cls){return `<div class="row" style="font-size:12px"><span style="min-width:96px;color:var(--color-neutral-700)">${label}</span>
+  <span class="bar ${cls||''}"><i style="width:${Math.min(100,val/max*100)}%"></i></span><b class="mono">${val}</b></div>`;}
+
+function paintDrawer(){
+  if(!S.drawer)return; const {kind,id}=S.drawer;
+  if(kind==='device'){
+    const d=dev(id); if(!d)return;
+    const tabs=['Overview','Track','Submissions'];
+    let body='';
+    if(S.tab===0) body=`
+      <div class="row" style="gap:var(--space-3);align-items:flex-start">
+        <span class="portrait"><image-slot id="emp-${d.id}" shape="rect" placeholder="Drop the officer's photograph"></image-slot></span>
+        <dl class="kv" style="flex:1">${kvRow('Extension',d.ext)}${kvRow('Team',d.team)}${kvRow('Handset',d.hw)}
+          ${kvRow('Check-in',chkWord(d.chk)+' · '+d.chkAt)}${kvRow('Photographs',d.photos+' today')}</dl></div>
+      <div class="sect"><div class="row"><span class="dot ${d.status}"></span><b style="font-family:var(--font-heading)">${d.status.toUpperCase()}</b>
+        <span class="text-muted" style="font-size:12px">last fix ${seen(d.seen)}</span></div>
+        <dl class="kv">${kvRow('Enumerator',esc(d.user))}${kvRow('Team',d.team)}${kvRow('Handset',d.hw+' · '+d.os)}
+        ${kvRow('Position',d.lat.toFixed(4)+', '+d.lng.toFixed(4))}${kvRow('Accuracy',d.acc+' m')}${kvRow('Geofence',d.geo)}
+        ${kvRow('Shift start',d.shift)}${kvRow('Distance today',d.km+' km')}</dl></div>
+      <div class="sect"><h4>Health</h4>
+        ${barRow('Battery',d.bat,100,batCls(d.bat))}${barRow('Signal',d.sig,5,d.sig<2?'bad':d.sig<3?'warn':'')}
+        ${barRow('Records',d.rec,d.tgt,'')}
+        <div class="row" style="font-size:12px"><span style="min-width:96px;color:var(--color-neutral-700)">Queued</span>
+        <span class="tag ${d.q?'tag-accent-2':'tag-neutral'}">${d.q} submission${d.q===1?'':'s'}</span></div></div>
+      ${d.flags?`<div class="note">${d.flags} data-quality flag${d.flags>1?'s':''} raised against this handset today.</div>`:''}
+      ${callHistory(d.user)}`;
+    if(S.tab===1) body=`<div class="sect"><h4>Today's track</h4>
+      <ul class="trail plain">${TRAIL.map(t=>`<li><time>${t[0]}</time><div><b>${t[1]}</b><br><span class="text-muted">${t[3]}</span></div></li>`).join('')}</ul></div>`;
+    if(S.tab===2) body=`<div class="sect"><h4>Submissions per hour</h4>
+      <div class="spark">${HOURLY.map((h,i)=>`<i class="${i>8?'hi':''}" style="height:${h/26*100}%"></i>`).join('')}</div>
+      <div class="text-muted" style="font-size:11px">06:00 → 18:00</div>
+      <dl class="kv">${kvRow('Accepted',d.rec-d.flags)}${kvRow('Flagged',d.flags)}${kvRow('Target',d.tgt)}${kvRow('Completion',Math.round(d.rec/d.tgt*100)+'%')}</dl></div>`;
+    drawer.innerHTML=drawerShell('Handset '+d.id,esc(d.user),d.team+' · '+d.hw,tabs,body,
+      `<button class="btn btn-primary" data-act="Ping requested — handset will report position within 30 s">Ping handset</button>
+       <button class="btn btn-secondary" data-call="${d.id}">Call ext ${d.ext}</button>
+       <button class="btn btn-secondary" data-act="Location history opened" data-goto="history">Open history</button>`);
+  }
+  else if(kind==='alert'){
+    const a=ALERTS.find(x=>x.id===id);
+    drawer.innerHTML=drawerShell('Alert '+a.id,esc(a.kind),a.where+' · '+a.t,null,
+      `<div class="row"><span class="tag ${sevTag(a.sev)}">${a.sev==='high'?'High':a.sev==='med'?'Medium':'Low'} severity</span>
+        <span class="tag tag-neutral">${a.dev}</span></div>
+       <p style="font-size:14px">${a.note}</p>
+       <div class="sect"><h4>Handset at trigger</h4><dl class="kv">
+        ${kvRow('Device',a.dev+' · '+esc(dev(a.dev).user))}${kvRow('Battery',dev(a.dev).bat+'%')}
+        ${kvRow('Signal',dev(a.dev).sig+'/5')}${kvRow('Queued',dev(a.dev).q+' submissions')}</dl></div>`,
+      `<button class="btn btn-primary" data-act="Alert ${a.id} acknowledged">Acknowledge</button>
+       <button class="btn btn-secondary" data-act="Escalated to supervisor Gcina Mahlalela">Escalate</button>
+       <button class="btn btn-secondary" data-drawer="device:${a.dev}">View handset</button>`);
+  }
+  else if(kind==='geo'){
+    const g=GEOFENCES.find(x=>x.id===id);
+    drawer.innerHTML=drawerShell('Geofence '+g.id,esc(g.name),g.team,null,
+      `<dl class="kv">${kvRow('Radius',(g.r/1000).toFixed(1)+' km')}${kvRow('Centre',AREA[g.at][0].toFixed(4)+', '+AREA[g.at][1].toFixed(4))}
+        ${kvRow('Rule',g.rule)}${kvRow('Handsets inside',g.inside)}${kvRow('Open alerts',g.alerts)}
+        ${kvRow('State',g.active?'Enforcing':'Logging only')}</dl>
+       <div class="sect"><h4>Handsets inside now</h4><ul class="plain">${DEVICES.filter(d=>d.geo===g.name).map(d=>
+        `<li class="row" style="padding:5px 0;font-size:13px"><span class="dot ${d.status}"></span>${d.id} — ${esc(d.user)}</li>`).join('')||'<li class="text-muted">None</li>'}</ul></div>`,
+      `<button class="btn btn-primary" data-act="${g.active?'Enforcement paused':'Enforcement enabled'} for ${g.id}">${g.active?'Pause rule':'Enable rule'}</button>
+       <button class="btn btn-secondary" data-act="Boundary editor opened">Edit boundary</button>`);
+  }
+  else if(kind==='assign'){
+    const a=ASSIGNMENTS.find(x=>x.id===id);
+    drawer.innerHTML=drawerShell('Assignment '+a.id,esc(a.name),a.dept+' · due '+a.due,null,
+      `<div class="row"><span class="tag ${a.status==='On track'?'tag-accent':a.status==='At risk'?'tag-neutral':'tag-accent-2'}">${a.status}</span>
+        <span class="text-muted" style="font-size:12px">${a.done} of ${a.tgt} records</span></div>
+       ${barRow('Progress',a.done,a.tgt,a.status==='Behind'?'bad':a.status==='At risk'?'warn':'')}
+       <div class="sect"><h4>Handsets on this assignment</h4><ul class="plain">${a.devs.map(id2=>{const d=dev(id2);
+        return `<li><button class="listrow" data-drawer="device:${id2}"><span class="dot ${d.status}"></span>
+          <span class="who"><b>${esc(d.user)}</b><span>${id2} · ${d.rec}/${d.tgt} records · ${d.bat}%</span></span>
+          <span class="tag tag-neutral">${d.q} queued</span></button></li>`}).join('')}</ul></div>
+       ${a.flags?`<div class="note">${a.flags} submissions on this assignment carry data-quality flags.</div>`:''}`,
+      `<button class="btn btn-primary" data-act="Reassignment panel opened">Reassign work</button>
+       <button class="btn btn-secondary" data-act="Assignment ${a.id} exported to CSV">Export</button>`);
+  }
+  else if(kind==='sync'){
+    const s=SYNC.find(x=>x.id===id);
+    drawer.innerHTML=drawerShell('Queue '+s.id,s.form,s.dev+' · '+esc(dev(s.dev).user),null,
+      `<dl class="kv">${kvRow('Items held',s.items)}${kvRow('Payload',s.size)}${kvRow('Waiting',s.age)}
+        ${kvRow('Attempts',s.tries)}${kvRow('Reason',s.reason)}</dl>
+       <div class="note">Records stay encrypted on the handset until the server acknowledges each item. Nothing is lost while a collector is offline.</div>`,
+      `<button class="btn btn-primary" data-act="Retry pushed to ${s.dev}">Retry now</button>
+       <button class="btn btn-secondary" data-drawer="device:${s.dev}">View handset</button>`);
+  }
+  else if(kind==='flag'){
+    const f=FLAGS.find(x=>x.id===id);
+    drawer.innerHTML=drawerShell('Flag '+f.id,f.type,'Record '+f.rec+' · '+f.dev+' · '+f.when,null,
+      `<div class="row"><span class="tag ${sevTag(f.sev)}">${f.sev==='high'?'High':f.sev==='med'?'Medium':'Low'}</span>
+        ${f.dist!=='—'?`<span class="tag tag-neutral">Δ ${f.dist}</span>`:''}</div>
+       <p style="font-size:14px">${f.note}</p>
+       <dl class="kv">${kvRow('Collector',esc(dev(f.dev).user))}${kvRow('Team',dev(f.dev).team)}
+        ${kvRow('Fix accuracy',dev(f.dev).acc+' m')}${kvRow('Submitted',f.when)}</dl>`,
+      `<button class="btn btn-primary" data-act="${f.id} sent back to ${f.dev} for re-collection">Send back</button>
+       <button class="btn btn-secondary" data-act="${f.id} accepted with note">Accept anyway</button>`);
+  }
+  else if(kind==='user'){
+    const u=USERS.find(x=>x.id===id),col=COLS.indexOf(u.role.replace('Department manager','Dept manager')
+      .replace('Data quality officer','Quality officer').replace('Control-room supervisor','Supervisor')
+      .replace('Field collector','Collector').replace('Staff device holder','Staff holder'));
+    drawer.innerHTML=drawerShell('Role holder '+u.id,esc(u.name),u.role,null,
+      `<div class="row" style="gap:var(--space-3);align-items:flex-start">
+        <span class="portrait"><image-slot id="emp-${u.dev}" shape="rect" placeholder="From HRIS"></image-slot></span>
+        <dl class="kv" style="flex:1">${kvRow('HRIS record',u.emp)}${kvRow('Job title',u.title)}${kvRow('Unit',u.unit)}
+          ${kvRow('Two-factor',u.mfa?'Enabled':'<span style="color:var(--color-accent-2-700)">Not enrolled</span>')}
+          ${kvRow('Last active',u.last)}</dl></div>
+       <div class="sect"><h4>How this role was derived</h4>
+        <dl class="kv">${kvRow('Rule matched','#'+u.rule)}${kvRow('Condition',RULES[u.rule])}
+          ${kvRow('Role key','<span class="mono">'+u.key+'</span>')}${kvRow('Scope',u.scope)}
+          ${kvRow('Re-derived','Nightly, and on every HRIS event')}</dl>
+        <div class="note">Job title, unit and photograph are owned by HRIS and cannot be edited here. Change the appointment in HRIS and the role follows by the next morning.</div></div>
+       <div class="sect"><h4>Effective permissions</h4><ul class="plain" style="font-size:13px">
+        ${PERMS.map(p=>{const v=col>-1?p[2+col]:0;
+        return `<li class="row" style="padding:4px 0"><span style="width:16px;color:${v?'var(--color-accent-700)':'var(--color-neutral-500)'}">${v?'✓':'—'}</span>
+          <span>${p[1]}</span><span class="mono text-muted" style="margin-left:auto;font-size:10px">${p[0]}</span></li>`}).join('')}</ul></div>`,
+      `<button class="btn btn-secondary" data-act="Opening ${u.emp} in HRIS — job title and unit are changed there, not here">Open in HRIS</button>
+       <button class="btn btn-secondary" data-act="Temporary elevation granted to ${esc(u.name)} — expires in 30 days, logged against ${ROLES[S.role].who}">Grant elevation</button>
+       ${u.mfa?'':'<button class="btn btn-secondary" data-act="Two-factor enrolment invite sent">Require 2FA</button>'}`);
+  }
+  else if(kind==='report'){
+    const map={daily:['Daily collection summary','Records, targets and flag counts per team for the selected day.'],
+      cover:['Geofence coverage report','Time inside assigned zones, entries, exits and dwell breaches.'],
+      quality:['Data quality dossier','Every flagged submission with the position evidence attached.'],
+      fleet:['Handset fleet health','Battery, connectivity and offline duration per device.']};
+    const r=map[id];
+    drawer.innerHTML=drawerShell('Report',r[0],'Period 01–19 Aug 2026',null,
+      `<p style="font-size:14px">${r[1]}</p>
+       <div class="field"><label>Period</label><select class="input"><option>01–19 August 2026</option><option>July 2026</option><option>Q3 2026</option></select></div>
+       <div class="field" style="margin-top:var(--space-3)"><label>Scope</label><select class="input"><option>All field teams</option><option>Manzini North</option><option>Matsapha Industrial</option><option>Mbabane Central</option><option>Rural South</option></select></div>
+       <div class="field" style="margin-top:var(--space-3)"><label>Format</label>
+         <div class="chips" style="margin-top:5px"><button class="chip" aria-pressed="true">PDF</button><button class="chip">CSV</button><button class="chip">XLSX</button></div></div>`,
+      `<button class="btn btn-primary" data-act="${r[0]} queued — you will be notified when ready">Generate</button>
+       <button class="btn btn-secondary" data-act="Report scheduled weekly, Mondays 06:00">Schedule weekly</button>`);
+  }
+  else if(kind==='trail'){
+    const t=TRAIL[+id];
+    drawer.innerHTML=drawerShell('Track point',t[1],'NRU-041 · Thandeka Dlamini · '+t[0],null,
+      `<dl class="kv">${kvRow('Time',t[0])}${kvRow('Position',t[2][0].toFixed(4)+', '+t[2][1].toFixed(4))}${kvRow('Detail',t[3])}</dl>
+       <div class="note">Track points are retained for 90 days under the NRU data-protection policy, then reduced to daily distance totals.</div>`,
+      `<button class="btn btn-secondary" data-drawer="device:NRU-041">View handset</button>`);
+  }
+  else if(kind==='checkin'){
+    const d=dev(id);
+    drawer.innerHTML=drawerShell('Check-in '+d.id,esc(d.user),d.team+' · login '+d.chkAt,null,
+      `<div class="row">${chkTag(d.chk)}<span class="text-muted" style="font-size:12px">${chkWord(d.chk)}</span></div>
+       <dl class="kv">${kvRow('Assigned zone',esc(zoneOf(d)))}
+        ${kvRow('Distance from zone',d.chkDist===null?'No fix obtained':d.chkDist<1000?d.chkDist+' m':(d.chkDist/1000).toFixed(1)+' km')}
+        ${kvRow('Fix accuracy',d.acc+' m')}${kvRow('Fix source','GNSS')}
+        ${kvRow('Check-in photo',d.selfie?'On file':'Not taken')}${kvRow('Next re-confirmation','+'+POLICY.recheck+' h')}</dl>
+       ${d.chk==='ok'?'<div class="note">Forms unlocked at '+d.chkAt+'. Position logged against the login.</div>'
+        :'<div class="note alert">Forms are locked on this handset. The officer sees the distance to their zone and can request an override.</div>'}`,
+      d.chk==='ok'?`<button class="btn btn-secondary" data-call="${d.id}">Call ext ${d.ext}</button>
+        <button class="btn btn-secondary" data-drawer="device:${d.id}">Open handset</button>`
+       :`<button class="btn btn-primary" data-act="Override granted to ${d.id} — logged against ${ROLES[S.role].who}">Grant override</button>
+        <button class="btn btn-secondary" data-call="${d.id}">Call ext ${d.ext}</button>`);
+  }
+  else if(kind==='staff'){
+    const p=person(id);
+    drawer.innerHTML=drawerShell('Employee device '+p.id,esc(p.user),p.role+' · '+p.dept,null,
+      `<div class="row" style="gap:var(--space-3);align-items:flex-start">
+        <span class="portrait"><image-slot id="emp-${p.id}" shape="rect" placeholder="Drop the employee's photograph"></image-slot></span>
+        <dl class="kv" style="flex:1">${kvRow('Extension',p.ext)}${kvRow('Device',p.dev)}${kvRow('Class',p.kind)}
+          ${kvRow('Site',p.site)}${kvRow('Battery',p.bat+'%')}</dl></div>
+       <div class="sect"><h4>Geofence</h4>
+        <dl class="kv">${kvRow('Assigned zone',p.zone)}${kvRow('Inside now',p.inside?'Yes':'No')}
+          ${kvRow('Confirmed at',p.chkAt)}${kvRow('Tracking','Zone state only — no continuous track')}</dl>
+        ${p.inside?'':'<div class="note alert">Reported outside '+p.zone+' at last check. Office devices raise a notice, not an alert.</div>'}</div>
+       ${callHistory(p.user)}`,
+      `<button class="btn btn-primary" data-call="${p.id}">Call ext ${p.ext}</button>
+       <button class="btn btn-secondary" data-act="Zone reassignment panel opened for ${p.id}">Change zone</button>`);
+  }
+  else if(kind==='call'){
+    const c=CALLS.find(x=>x.id===id);
+    drawer.innerHTML=drawerShell('Call '+c.id,esc(c.who),c.kind+' · '+c.start,null,
+      `<div class="row"><span class="tag ${c.kindOut?'tag-neutral':'tag-accent'}">${c.kindOut?'Trunk breakout':'On-net — no charge'}</span>
+        <span class="mono">${c.dur==='0:00'?'No answer':c.dur}</span></div>
+       <p style="font-size:14px">${esc(c.note)}</p>
+       <dl class="kv">${kvRow('Direction',c.dir==='in'?'Inbound':c.dir==='grp'?'Group':'Outbound')}
+        ${kvRow('Extension',c.ext)}${kvRow('Other party',esc(c.with))}
+        ${kvRow('Cost',c.cost?'E '+c.cost.toFixed(2):'E 0.00 — carried on the data bundle')}
+        ${kvRow('Data used',c.dur==='0:00'?'—':(Math.round(parseFloat(c.dur)*0.12*10)/10)+' MB')}</dl>`,
+      `${callBack(c)}
+       <button class="btn btn-secondary" data-act="Call ${c.id} note added to the shift record">Add note</button>`);
+  }
+  else if(kind==='live'){
+    const p=person(id)||DEVICES[0];
+    drawer.innerHTML=drawerShell('Voice over IP','Calling '+p.user,'ext '+p.ext+' · on-net, no airtime',null,
+      `<div class="callbar">${avatar(p.id,p.user,52,p.status)}
+        <div><div class="kicker">${p.status==='offline'?'Unreachable':'Connected'}</div>
+          <div class="calltime" id="calltime">00:0${p.status==='offline'?'0':'2'}</div>
+          <div class="text-muted" style="font-size:11px">Opus 16 kbit/s · ${p.status==='offline'?'no data connection':'good'}</div></div></div>
+       ${p.status==='offline'?'<div class="note alert">The handset has no data connection. The call is queued and the officer sees a missed-call card at the next sync.</div>':''}
+       <div class="callkeys">
+        <button data-act="Microphone muted">Mute</button><button data-act="Call placed on hold">Hold</button>
+        <button data-act="Supervisor added to the call">Add</button>
+        <button data-act="Switched to push-to-talk — message queues like a form">Push to talk</button>
+        <button data-act="Call recording started — the officer is notified">Record</button>
+        <button data-act="Control room transferred the call">Transfer</button></div>
+       <dl class="kv">${kvRow('Charge','E 0.00 — on-net')}${kvRow('Data','≈ 7 MB per hour')}${kvRow('Fallback','Push-to-talk on weak signal')}</dl>`,
+      `<button class="btn btn-primary" data-act="Call ended · 0:02 · no airtime consumed" style="background:var(--color-accent-2)">End call</button>
+       <button class="btn btn-secondary" data-drawer="${p.kind==='Field'?'device':'staff'}:${p.id}">Open profile</button>`);
+  }
+  else if(kind==='proof'){
+    const p=PROOF.find(x=>x.id===id),d=dev(p.dev);
+    drawer.innerHTML=drawerShell('Photograph '+p.id,esc(p.what),'Record '+p.form+' · '+p.time,null,
+      `<div style="height:210px;border:1px solid var(--color-text)">
+        <image-slot id="proofbig-${p.id}" shape="rect" placeholder="Drop the field photograph"></image-slot></div>
+       <dl class="kv">${kvRow('Taken by',esc(d.user)+' · '+p.dev)}${kvRow('Time',p.time)}
+        ${kvRow('Position',d.lat.toFixed(4)+', '+d.lng.toFixed(4))}${kvRow('Accuracy','±'+p.acc+' m')}
+        ${kvRow('Zone at capture',p.zone)}${kvRow('Camera','Rear · flash off')}
+        ${kvRow('Stamp','Written by the handset, not editable')}</dl>
+       ${p.state==='flagged'?'<div class="note alert">Captured outside any assigned zone — the record it belongs to is held for review.</div>'
+        :'<div class="note">Position matches the submitted record within tolerance.</div>'}`,
+      `<button class="btn btn-primary" data-act="${p.id} accepted as proof for ${p.form}">Accept</button>
+       <button class="btn btn-secondary" data-act="${p.id} sent back to ${p.dev} for re-capture">Send back</button>
+       <button class="btn btn-secondary" data-drawer="device:${p.dev}">Open handset</button>`);
+  }
+  else if(kind==='act'){
+    drawer.innerHTML=drawerShell('Action','Confirmed',new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),null,
+      `<p style="font-size:15px">${esc(id)}</p><div class="note">Logged to the control-room audit trail.</div>`,
+      `<button class="btn btn-secondary" data-close>Dismiss</button>`);
+  }
+}
+
+/* ══ screens ═══════════════════════════════════════════════════════════ */
+function filtered(){return DEVICES.filter(d=>S.filters.has(d.status));}
+
+const screens={
+map(){
+  const list=filtered();
+  return `<div class="page flush"><div class="mapgrid${S.pane?'':' pane-off'}">
+    <div class="mappanel">
+      <div class="top">
+        <div class="row"><div style="flex:1"><div class="kicker">Live location</div>
+          <h4 style="margin:0">${list.length} handsets shown</h4></div>
+          <button class="icobtn" data-pane title="Collapse list" aria-label="Collapse list">⟨</button></div>
+        <input class="input" id="q" placeholder="Search enumerator, team or handset ID">
+        <div class="chips">${['online','idle','offline'].map(s=>
+          `<button class="chip" data-filter="${s}" aria-pressed="${S.filters.has(s)}"><span class="dot ${s}"></span>${s}</button>`).join('')}</div>
+      </div>
+      <div class="scroll" id="devlist">${list.map(d=>rowDevice(d)).join('')}</div>
+    </div>
+    <div class="mapstage view-${S.view}${S.layers.labels?'':' nolabel'}">
+      <div class="leafmap" id="map1"></div>
+      <div class="maptools">
+        ${S.pane?'':'<button class="chip" data-pane style="background:var(--color-bg);border-color:var(--color-text)">⟩ Show enumerators</button>'}
+        <div class="seg2">${BASELIST.map(([k,l])=>`<button data-base="${k}" aria-pressed="${S.base===k}">${l}</button>`).join('')}</div>
+        <div class="seg2">${[['plain','Colour'],['news','Newsprint'],['ink','Process']].map(([k,l])=>
+          `<button data-view="${k}" aria-pressed="${S.view===k}">${l}</button>`).join('')}</div>
+        <div class="panelbox">${[['geo','Geofences'],['trail','Trails'],['labels','Labels']].map(([k,l])=>
+          `<button class="chip" data-layer="${k}" aria-pressed="${S.layers[k]}">${l}</button>`).join('')}</div>
+      </div>
+      <div class="mapctl zoom">
+        <button data-map="in" title="Zoom in">+</button>
+        <button data-map="out" title="Zoom out">−</button>
+        <button data-map="fit" title="Fit all handsets">⤢</button>
+        <button data-map="loc" title="Centre on selected">◎</button>
+      </div>
+      <div class="legend">
+        <div class="row"><span class="dot online"></span>Reporting live</div>
+        <div class="row"><span class="dot idle"></span>Idle / weak signal</div>
+        <div class="row"><span class="dot offline"></span>Offline — queued data</div>
+      </div>
+    </div></div></div>`;
+},
+exec(){
+  const teams=[...new Set(DEVICES.map(d=>d.team))];
+  return `<div class="page">
+    ${head('Executive','Organisation overview','Totals only. No individual enumerator position or track is shown at this level — the role cannot reach the live map or history.')}
+    ${stats([[ASSIGNMENTS.reduce((a,b)=>a+b.done,0),'Records collected','this month'],
+      [Math.round(ASSIGNMENTS.reduce((a,b)=>a+b.done,0)/ASSIGNMENTS.reduce((a,b)=>a+b.tgt,0)*100)+'%','Against target'],
+      ['96.4%','Submissions clean'],[DEVICES.length,'Handsets deployed'],[GEOFENCES.length,'Zones monitored']])}
+    <div class="sect"><h4>Progress by department</h4>
+      ${ASSIGNMENTS.map(a=>`<div class="row" style="padding:7px 0;font-size:13px">
+        <span style="min-width:190px">${esc(a.dept)} — <span class="text-muted">${esc(a.team)}</span></span>
+        <span class="bar ${a.status==='Behind'?'bad':a.status==='At risk'?'warn':''}"><i style="width:${a.done/a.tgt*100}%"></i></span>
+        <span class="mono" style="width:70px;text-align:right">${a.done}/${a.tgt}</span>
+        <span class="tag ${a.status==='On track'?'tag-accent':a.status==='At risk'?'tag-neutral':'tag-accent-2'}">${a.status}</span></div>`).join('')}</div>
+    <div class="sect"><h4>Fleet by team</h4>
+      ${teams.map(t=>{const ds=DEVICES.filter(d=>d.team===t);
+        return `<div class="row" style="padding:6px 0;font-size:13px"><span style="min-width:190px">${t}</span>
+        <span class="text-muted">${ds.length} handsets · ${ds.filter(d=>d.status==='online').length} reporting · ${ds.reduce((a,b)=>a+b.q,0)} records held offline</span></div>`}).join('')}</div>
+    <div class="note">Aggregates refresh every 15 minutes. Individual location data is restricted to the IT control room under the NRU data-protection policy.</div></div>`;
+},
+devices(){
+  const rows=DEVICES.map(d=>`<tr data-drawer="device:${d.id}">
+    <td><span class="row"><span class="dot ${d.status}"></span>${d.id}</span></td>
+    <td><span class="row">${avatar(d.id,d.user,26,d.status)}${esc(d.user)}</span></td><td class="text-muted">${d.team}</td>
+    <td><span class="row"><span class="bar ${batCls(d.bat)}" style="width:52px"><i style="width:${d.bat}%"></i></span><span class="mono">${d.bat}%</span></span></td>
+    <td class="mono">${d.sig}/5</td><td class="mono">${d.acc} m</td>
+    <td class="mono">${d.rec}/${d.tgt}</td>
+    <td>${d.status==='offline'?'<span class="text-muted">—</span>'
+      :`<button class="chip" data-call="${d.id}" title="Call ext ${d.ext}">☎ ${d.ext}</button>`}</td>
+    <td>${d.q?`<span class="tag tag-accent-2">${d.q}</span>`:'<span class="text-muted">—</span>'}</td>
+    <td>${d.flags?`<span class="tag tag-neutral">${d.flags}</span>`:'<span class="text-muted">—</span>'}</td>
+    <td class="text-muted">${seen(d.seen)}</td></tr>`).join('');
+  return `<div class="page">
+    ${head('Fleet','Handsets','Every data-collection handset issued by the IT department, with the health signals that decide whether its data can be trusted.')}
+    ${stats([[DEVICES.length,'Handsets issued'],[DEVICES.filter(d=>d.status==='online').length,'Reporting now'],
+      [DEVICES.filter(d=>d.bat<40).length,'Battery under 40%'],[DEVICES.filter(d=>d.status==='offline').length,'Offline'],
+      [DEVICES.reduce((a,b)=>a+b.q,0),'Records held offline']])}
+    <div class="tbl-wrap"><table class="table"><thead><tr>
+      <th>Handset</th><th>Enumerator</th><th>Team</th><th>Battery</th><th>Signal</th><th>Accuracy</th><th>Records</th><th>Voice</th><th>Queued</th><th>Flags</th><th>Last fix</th>
+      </tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="text-muted" style="font-size:12px">Select any row for the handset drawer — position, health, track and submissions.</p></div>`;
+},
+alerts(){
+  return `<div class="page">
+    ${head('Boundaries','Geofences &amp; alerts','Zones are drawn per field team. Every entry, exit and dwell breach raises an alert in the control room rather than a silent log line.')}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--space-6)">
+      <div class="sect"><h4>Alert feed — today</h4><div>${ALERTS.map(a=>`
+        <button class="listrow" data-drawer="alert:${a.id}">
+          <span class="mono" style="width:42px;color:var(--color-neutral-600)">${a.t}</span>
+          <span class="who"><b>${esc(a.kind)}</b><span>${a.dev} · ${a.where}</span></span>
+          <span class="tag ${sevTag(a.sev)}">${a.sev}</span></button>`).join('')}</div></div>
+      <div class="sect"><h4>Zones</h4><div>${GEOFENCES.map(g=>`
+        <button class="listrow" data-drawer="geo:${g.id}">
+          <span class="who"><b>${esc(g.name)}</b><span>${g.team} · ${(g.r/1000).toFixed(1)} km · ${g.rule}</span></span>
+          <span class="tag ${g.active?'tag-accent':'tag-neutral'}">${g.active?'Enforcing':'Logging'}</span>
+          <span class="mono" style="width:26px;text-align:right">${g.inside}</span></button>`).join('')}</div>
+        <p class="text-muted" style="font-size:12px">Right column: handsets currently inside.</p></div>
+    </div></div>`;
+},
+history(){
+  const t=TRAIL[S.tIdx];
+  return `<div class="page flush"><div class="mapgrid">
+    <div class="mappanel">
+      <div class="top">
+        <div><div class="kicker">Playback</div><h4 style="margin:0">NRU-041 · Thandeka Dlamini</h4>
+          <span class="text-muted" style="font-size:12px">19 Aug 2026 · 07:12 → 10:47 · 14.2 km</span></div>
+        <div class="row">
+          <button class="btn btn-primary" data-play>${S.play?'❙❙ Pause':'▶ Play'}</button>
+          <input type="range" id="scrub" min="0" max="${TRAIL.length-1}" value="${S.tIdx}" style="flex:1;accent-color:var(--color-accent)">
+          <span class="mono" id="ptime">${t[0]}</span>
+        </div>
+      </div>
+      <div class="scroll">${TRAIL.map((p,i)=>`<button class="listrow" data-trailidx="${i}" ${i===S.tIdx?'aria-selected="true"':''}>
+        <span class="mono" style="width:42px;color:var(--color-neutral-600)">${p[0]}</span>
+        <span class="who"><b>${esc(p[1])}</b><span>${p[3]}</span></span></button>`).join('')}</div>
+    </div>
+    <div class="mapstage view-${S.view}">
+      <div class="leafmap" id="map2"></div>
+      <div class="maptools">
+        <div class="seg2">${BASELIST.map(([k,l])=>`<button data-base="${k}" aria-pressed="${S.base===k}">${l}</button>`).join('')}</div>
+        <div class="seg2">${[['plain','Colour'],['news','Newsprint'],['ink','Process']].map(([k,l])=>
+        `<button data-view="${k}" aria-pressed="${S.view===k}">${l}</button>`).join('')}</div></div>
+      <div class="mapctl zoom"><button data-map="in">+</button><button data-map="out">−</button><button data-map="fit">⤢</button></div>
+      <div class="legend"><div class="row"><span class="dot online"></span><span id="plegend">Position at ${t[0]}</span></div>
+        <div class="row"><span style="width:9px;height:2px;background:var(--color-accent-2);display:inline-block"></span>Track walked</div></div>
+    </div></div></div>`;
+},
+assign(){
+  return `<div class="page">
+    ${head('Collection','Assignments','Departmental work packages, the handsets carrying them and how far each has run against target.')}
+    ${stats([[ASSIGNMENTS.length,'Active assignments'],[ASSIGNMENTS.reduce((a,b)=>a+b.done,0),'Records collected'],
+      [ASSIGNMENTS.reduce((a,b)=>a+b.tgt,0),'Target'],[ASSIGNMENTS.filter(a=>a.status!=='On track').length,'Needing attention']])}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:var(--space-2);background:var(--color-bg)">
+      ${ASSIGNMENTS.map(a=>`<button class="taskcard" style="background:transparent" data-drawer="assign:${a.id}">
+        <span class="kicker">${a.dept} · due ${a.due}</span>
+        <b style="font-family:var(--font-heading);font-size:18px;line-height:1.15">${esc(a.name)}</b>
+        <span class="row" style="width:100%"><span class="bar ${a.status==='Behind'?'bad':a.status==='At risk'?'warn':''}"><i style="width:${a.done/a.tgt*100}%"></i></span>
+          <span class="mono">${a.done}/${a.tgt}</span></span>
+        <span class="row" style="font-size:12px"><span class="tag ${a.status==='On track'?'tag-accent':a.status==='At risk'?'tag-neutral':'tag-accent-2'}">${a.status}</span>
+          <span class="text-muted">${a.devs.length} handsets · ${a.flags} flags</span></span></button>`).join('')}
+    </div></div>`;
+},
+sync(){
+  return `<div class="page">
+    ${head('Resilience','Offline sync queue','Collectors keep working without a network. This is what is still sitting on handsets, and why.')}
+    ${stats([[SYNC.reduce((a,b)=>a+b.items,0),'Records held'],[SYNC.length,'Handsets queued'],['12.6 MB','Payload waiting'],['3 h 12 m','Oldest item']])}
+    <div class="tbl-wrap"><table class="table"><thead><tr><th>Queue</th><th>Handset</th><th>Form</th><th>Items</th><th>Size</th><th>Waiting</th><th>Attempts</th><th>Reason</th></tr></thead>
+      <tbody>${SYNC.map(s=>`<tr data-drawer="sync:${s.id}"><td class="mono">${s.id}</td>
+        <td><span class="row"><span class="dot ${dev(s.dev).status}"></span>${s.dev}</span></td>
+        <td>${s.form}</td><td class="mono">${s.items}</td><td class="mono">${s.size}</td><td class="mono">${s.age}</td>
+        <td class="mono">${s.tries}</td><td class="text-muted">${s.reason}</td></tr>`).join('')}</tbody></table></div>
+    <p class="text-muted" style="font-size:12px">Nothing is deleted from a handset until the server acknowledges each record.</p></div>`;
+},
+quality(){
+  return `<div class="page">
+    ${head('Assurance','Data quality','Where the reported position and the reported record disagree — the check that makes “right and accurate information” more than a promise.')}
+    ${stats([[FLAGS.length,'Open flags'],[FLAGS.filter(f=>f.sev==='high').length,'High severity'],['96.4%','Submissions clean'],['2.4 km','Largest position gap']])}
+    <div class="tbl-wrap"><table class="table"><thead><tr><th>Flag</th><th>Record</th><th>Handset</th><th>Check failed</th><th>Gap</th><th>Time</th><th>Severity</th></tr></thead>
+      <tbody>${FLAGS.map(f=>`<tr data-drawer="flag:${f.id}"><td class="mono">${f.id}</td><td class="mono">${f.rec}</td>
+        <td>${f.dev}</td><td>${f.type}</td><td class="mono">${f.dist}</td><td class="mono">${f.when}</td>
+        <td><span class="tag ${sevTag(f.sev)}">${f.sev}</span></td></tr>`).join('')}</tbody></table></div></div>`;
+},
+reports(){
+  const cards=[['daily','Daily collection summary','Records, targets and flags per team, ready for the morning stand-up.'],
+    ['cover','Geofence coverage report','Time inside assigned zones, with entries, exits and dwell breaches.'],
+    ['quality','Data quality dossier','Every flagged submission with its position evidence attached.'],
+    ['fleet','Handset fleet health','Battery, connectivity and offline duration across the fleet.']];
+  return `<div class="page">
+    ${head('Output','Reports &amp; export','Paperless by default — every report leaves as PDF, CSV or XLSX and is logged against the requesting department.')}
+    <div class="sect"><h4>Collection this month</h4>
+      <div class="spark" style="height:110px">${HOURLY.concat(HOURLY.map(h=>h+4)).map((h,i)=>`<i class="${i%3===0?'hi':''}" style="height:${h/30*100}%"></i>`).join('')}</div>
+      <div class="row text-muted" style="font-size:11px;justify-content:space-between">
+        <span>01 Aug</span><span>19 Aug</span></div></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--space-2);background:var(--color-bg)">
+      ${cards.map(c=>`<button class="taskcard" style="background:transparent" data-drawer="report:${c[0]}">
+        <span class="kicker">Standard report</span>
+        <b style="font-family:var(--font-heading);font-size:18px">${esc(c[1])}</b>
+        <span class="text-muted" style="font-size:13px">${esc(c[2])}</span>
+        <span class="tag tag-outline">Configure &amp; generate</span></button>`).join('')}</div></div>`;
+},
+admin(){
+  return `<div class="page">
+    ${head('Governance','Users &amp; permissions','Roles are not granted here — they are derived from HRIS. This screen shows what each derived role may do, and every exception to it.')}
+    ${stats([[USERS.length,'Roles in use'],[everyone().length,'People from HRIS'],
+      [PERMS.length,'Permissions defined'],[ELEV.length,'Live exceptions'],['02:00','Last reconciliation']])}
+    <div class="note">People, job titles, units and photographs are read from the HRIS database each night and on every HR event. Nobody is created in this system; an exited employee loses their session, extension and zone within minutes.</div>
+    <div class="tbl-wrap"><table class="table"><thead><tr>
+      <th>Role holder</th><th>HRIS job title</th><th>Unit</th><th>Derived role</th><th>Scope</th><th>Two-factor</th><th>Last active</th></tr></thead>
+      <tbody>${USERS.map(u=>`<tr data-drawer="user:${u.id}">
+        <td><span class="row">${avatar(u.dev,u.name,26)}<span><b style="font-family:var(--font-heading)">${esc(u.name)}</b><br>
+          <span class="text-muted" style="font-size:11px">HRIS ${u.emp}</span></span></span></td>
+        <td class="text-muted">${u.title}</td><td class="text-muted">${u.unit}</td>
+        <td><span class="tag tag-outline">${u.role}</span></td>
+        <td class="text-muted">${u.scope}</td>
+        <td>${u.mfa?'<span class="tag tag-accent">Enabled</span>':'<span class="tag tag-accent-2">Not enrolled</span>'}</td>
+        <td class="mono">${u.last}</td></tr>`).join('')}</tbody></table></div>
+    <div class="sect"><h4>Permission matrix</h4>
+      <p class="text-muted" style="font-size:12px">Permissions belong to the role, never to the person. Scope narrows each one to the holder's HRIS unit.</p>
+      <div class="tbl-wrap"><table class="table"><thead><tr><th>Permission</th><th>Capability</th>${COLS.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+        <tbody>${PERMS.map(p=>`<tr style="cursor:default"><td class="mono" style="font-size:11px">${p[0]}</td><td>${p[1]}</td>${p.slice(2).map(v=>
+          `<td style="color:${v?'var(--color-accent-700)':'var(--color-neutral-500)'}">${v?'✓':'—'}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--space-6)">
+      <div class="sect"><h4>How a role is derived</h4>
+        <div>${Object.keys(RULES).map(r=>{const held=USERS.filter(u=>String(u.rule)===r);
+          return `<div class="listrow" style="cursor:default">
+          <span class="mono" style="width:22px;color:var(--color-neutral-600)">${r}</span>
+          <span class="who"><b>${held.length?held[0].role:'— no holder today'}</b><span>${RULES[r]}</span>
+            <span class="text-muted" style="font-size:11px">${held.length?'Held by '+held.map(u=>esc(u.name)).join(', '):'Rule defined, nobody matches'}</span></span></div>`}).join('')}</div>
+        <p class="text-muted" style="font-size:12px">Rules are versioned configuration, evaluated in order at each reconciliation — first match wins.</p></div>
+      <div class="sect"><h4>Exceptions in force</h4>
+        <div>${ELEV.map(e=>`<button class="listrow" data-act="${e.kind} for ${e.who} — ${e.what}, expires ${e.until}. Renewal requires a fresh grant.">
+          <span class="who"><b>${esc(e.who)}</b><span>${e.what} · ${e.why}</span></span>
+          <span class="tag tag-neutral">until ${e.until}</span></button>`).join('')}</div>
+        <div class="note">Every exception is time-bound and attributed. There is no permanent manual grant — an elevation expires rather than being renewed silently.</div>
+        <button class="btn btn-secondary" data-act="Quarterly access review pack generated for each department manager to confirm">Run access review</button></div>
+    </div></div>`;
+},
+checkin(){
+  const list=DEVICES.slice().sort((a,b)=>(a.chk==='ok')-(b.chk==='ok'));
+  const ok=DEVICES.filter(d=>d.chk==='ok').length;
+  return `<div class="page">
+    ${head('Enforcement','Shift check-in &amp; location confirmation','No collector reaches a form until the handset has proved it is standing inside its assigned zone. Login is refused, not warned.')}
+    ${stats([[ok+' / '+DEVICES.length,'Confirmed in zone'],
+      [DEVICES.filter(d=>d.chk==='out').length,'Outside assigned zone'],
+      [DEVICES.filter(d=>d.chk==='fail').length,'Logins blocked today'],
+      [POLICY.radius+' m','Tolerance radius'],
+      [POLICY.recheck+' h','Re-confirmation interval']])}
+    <div class="tbl-wrap"><table class="table"><thead><tr>
+      <th>Officer</th><th>Handset</th><th>Assigned zone</th><th>Confirmed</th><th>Distance from zone</th><th>Selfie</th><th>Status</th></tr></thead>
+      <tbody>${list.map(d=>`<tr data-drawer="checkin:${d.id}">
+        <td><span class="row">${avatar(d.id,d.user,26,d.status)}${esc(d.user)}</span></td>
+        <td class="mono">${d.id}</td><td class="text-muted">${esc(zoneOf(d))}</td>
+        <td class="mono">${d.chkAt}</td>
+        <td class="mono">${d.chkDist===null?'—':d.chkDist<1000?d.chkDist+' m':(d.chkDist/1000).toFixed(1)+' km'}</td>
+        <td>${d.selfie?'<span class="tag tag-neutral">On file</span>':'<span class="text-muted">—</span>'}</td>
+        <td>${chkTag(d.chk)}</td></tr>`).join('')}</tbody></table></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--space-6)">
+      <div class="sect"><h4>Policy in force</h4>
+        <dl class="kv">${kvRow('Tolerance radius',POLICY.radius+' m from the zone boundary')}
+          ${kvRow('Selfie at check-in',POLICY.selfie?'Required':'Optional')}
+          ${kvRow('Re-confirm every',POLICY.recheck+' hours')}
+          ${kvRow('No signal at login',POLICY.offline)}
+          ${kvRow('Photos per record','Minimum '+POLICY.photoMin)}</dl>
+        <button class="btn btn-secondary" data-act="Check-in policy editor opened">Edit policy</button></div>
+      <div class="sect"><h4>What happens when it fails</h4>
+        <p style="font-size:14px">The form list stays locked. The collector sees the distance to their zone and a single action — request an override from the control room, which is logged against the supervisor who grants it.</p>
+        <div class="note alert">Two overrides granted this week. Both to Rural South, where zone boundaries follow footpaths rather than roads.</div>
+        <button class="btn btn-primary" data-goto="collector">See the collector's login</button></div>
+    </div></div>`;
+},
+staff(){
+  const all=everyone();
+  const f=S.staffFilter;
+  const rows=all.filter(p=>f==='all'||(f==='field'?p.kind==='Field':f==='out'?!p.inside:p.kind!=='Field'));
+  return `<div class="page">
+    ${head('Coverage','All employee devices','Geofencing is not a field-team feature. Every issued handset — office, depot, vehicle, field — sits inside a zone and reports against it.')}
+    ${stats([[all.length,'Devices enrolled'],[all.filter(p=>p.kind!=='Field').length,'Office, depot &amp; vehicle'],
+      [DEVICES.length,'Field handsets'],[all.filter(p=>!p.inside).length,'Outside their zone'],
+      [GEOFENCES.length,'Zones defined']])}
+    <div class="chips">${[['all','Everyone'],['office','Office, depot &amp; vehicle'],['field','Field'],['out','Outside zone']].map(([k,l])=>
+      `<button class="chip" data-staff="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div>
+    <div class="tbl-wrap"><table class="table"><thead><tr>
+      <th>Employee</th><th>Department</th><th>Class</th><th>Device</th><th>Extension</th><th>Assigned zone</th><th>Inside now</th><th>Confirmed</th><th>Voice</th></tr></thead>
+      <tbody>${rows.map(p=>`<tr data-drawer="${p.kind==='Field'?'device':'staff'}:${p.id}">
+        <td><span class="row">${avatar(p.id,p.user,26,p.status)}<span><b style="font-family:var(--font-heading)">${esc(p.user)}</b><br>
+          <span class="text-muted" style="font-size:11px">${esc(p.role)}</span></span></span></td>
+        <td class="text-muted">${esc(p.dept)}</td><td>${p.kind}</td><td class="text-muted">${p.dev}</td>
+        <td class="mono">${p.ext}</td><td>${esc(p.zone)}</td>
+        <td>${p.inside?'<span class="tag tag-accent">Inside</span>':'<span class="tag tag-accent-2">Outside</span>'}</td>
+        <td class="mono">${p.chkAt}</td>
+        <td>${p.status==='offline'?'<span class="text-muted">Unreachable</span>'
+          :`<button class="chip" data-call="${p.id}" title="Call ext ${p.ext} over the data connection">☎ Call</button>`}</td></tr>`).join('')}</tbody></table></div>
+    <p class="text-muted" style="font-size:12px">Office devices report zone state only — no continuous track is kept for staff who are not on a field assignment.</p></div>`;
+},
+proof(){
+  const f=S.proofFilter;
+  const rows=PROOF.filter(p=>f==='all'||p.state===f);
+  return `<div class="page">
+    ${head('Evidence','Field photo proof','Every record carries at least one photograph taken on the spot. The position and time are stamped by the handset, not typed by the collector.')}
+    ${stats([[PROOF.length,'Photographs today'],[PROOF.filter(p=>p.state==='accepted').length,'Accepted'],
+      [PROOF.filter(p=>p.state==='flagged').length,'Flagged for review'],[POLICY.photoMin,'Required per record']])}
+    <div class="chips">${[['all','All'],['accepted','Accepted'],['flagged','Flagged']].map(([k,l])=>
+      `<button class="chip" data-proof="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div>
+    <div class="photogrid">${rows.map(p=>`
+      <button class="photo" data-drawer="proof:${p.id}">
+        <span class="frame"><image-slot id="proof-${p.id}" shape="rect" placeholder="Drop the field photo"></image-slot>
+          <span class="stamp"><span>${p.time} · ${p.zone==='—'?'no zone':esc(p.zone)}</span><span>±${p.acc} m</span></span></span>
+        <span class="row" style="font-size:12px"><b style="font-family:var(--font-heading)">${esc(p.what)}</b>
+          <span class="tag ${p.state==='accepted'?'tag-accent':'tag-accent-2'}" style="margin-left:auto">${p.state}</span></span>
+        <span class="text-muted" style="font-size:11px">${p.id} · record ${p.form} · ${p.dev}</span></button>`).join('')}</div>
+    <div class="note">Photographs are stored against the record, not the handset. Deleting a submission on the phone does not remove the evidence already synced.</div></div>`;
+},
+collector(){
+  const tabs=['Tasks','Map','Photos','Call','Me'];
+  const d=dev('NRU-041');
+  let body='';
+  if(!S.shift){
+    const st=S.gate;
+    body=`<div class="gate">
+      <div class="steps"><i class="${st>=0?'on':''}"></i><i class="${st>=1?'on':''}"></i><i class="${st>=2?'on':''}"></i></div>
+      ${st===0?`<div class="kicker">Step 1 of 3 · Location</div>
+        <h4 style="margin:0">Confirm you are at your work zone</h4>
+        <p style="font-size:14px">Forms stay locked until the handset reports a position inside <b>Manzini CBD (GF-01)</b>. This runs at every login.</p>
+        <div class="note">Tolerance ${POLICY.radius} m · GPS only, network position is not accepted.</div>
+        <button class="btn btn-primary btn-block" data-gate="fix">Get my position</button>`:''}
+      ${st===1?`<div class="kicker">Step 2 of 3 · Verification</div>
+        <h4 style="margin:0">${S.gateFix?'Inside Manzini CBD':'You are outside your zone'}</h4>
+        <div style="border:1px solid var(--color-text);padding:var(--space-3)">
+          <div class="mono" style="font-size:15px">${d.lat.toFixed(4)}, ${d.lng.toFixed(4)}</div>
+          <div class="text-muted" style="font-size:12px">Accuracy ${d.acc} m · ${S.gateFix?'40 m inside the boundary':'2.4 km from the boundary'}</div></div>
+        ${S.gateFix?'<div class="note">Position accepted. It is logged against this login.</div>'
+          :'<div class="note alert">Login refused. Move into your zone and try again, or ask the control room for a one-off override.</div>'}
+        ${S.gateFix?'<button class="btn btn-primary btn-block" data-gate="next">Continue</button>'
+          :'<button class="btn btn-primary btn-block" data-gate="fix">Try again</button><button class="btn btn-secondary btn-block" data-act="Override requested — control room notified, decision logged against the approving supervisor" style="margin-top:var(--space-2)">Request override</button>'}`:''}
+      ${st===2?`<div class="kicker">Step 3 of 3 · Identity</div>
+        <h4 style="margin:0">Take a check-in photo</h4>
+        <p style="font-size:14px">One photograph proves the handset and the officer arrived together.</p>
+        <div style="height:190px;border:1px solid var(--color-text)">
+          <image-slot id="selfie-NRU-041" shape="rect" placeholder="Check-in photo"></image-slot></div>
+        <button class="btn btn-primary btn-block" data-gate="start">Start shift</button>
+        <button class="btn btn-ghost btn-block" data-act="Skip refused — the check-in photograph is required by policy">Skip</button>`:''}
+    </div>`;
+    return `<div class="page">
+      ${head('Field side','Collector app','What the enumerator carries. Location confirmation is the first screen of every shift — the task list does not exist until it passes.')}
+      <div class="phonewrap">
+        <div class="phone">
+          <div class="sb"><span>07:12</span><span>NRU Collect</span><span>${d.bat}% ▮</span></div>
+          <div class="apphead"><div class="kicker">Signed in · check-in required</div>
+            <div class="row">${avatar(d.id,d.user,30,d.status)}<b style="font-family:var(--font-heading);font-size:17px">${esc(d.user)}</b>
+              <span class="tag tag-accent-2" style="margin-left:auto">Locked</span></div></div>
+          <div class="body">${body}</div>
+          <div class="tabbar">${tabs.map((t,i)=>`<button disabled style="opacity:.4">${t}</button>`).join('')}</div>
+        </div>
+        <div class="sect" style="max-width:42ch">
+          <h4>Enforced, not requested</h4>
+          <p style="font-size:14px">The gate is the login. A refused check-in leaves the collector with two options — move, or ask for an override that carries a supervisor's name.</p>
+          <dl class="kv">${kvRow('Runs','Every login, and every '+POLICY.recheck+' h thereafter')}
+            ${kvRow('Accepts','GPS fix within '+POLICY.radius+' m of the zone')}
+            ${kvRow('Rejects','Network-only position, mock-location apps')}
+            ${kvRow('Offline',POLICY.offline)}</dl>
+          <button class="btn btn-secondary" data-goto="checkin">Open the control-room view</button>
+        </div>
+      </div></div>`;
+  }
+  if(S.collectorTab===0) body=`${[['MB-114','Household needs survey','Zone GF-01 · 6 of 8 sections','open'],
+    ['MB-113','Household needs survey','Submitted 09:27 · accepted','done'],
+    ['MB-112','Household needs survey','Submitted 08:31 · accepted','done']].map(t=>
+    `<button class="taskcard" data-drawer="assign:AS-2201"><span class="row"><b style="font-family:var(--font-heading);font-size:15px">${t[0]}</b>
+      <span class="tag ${t[3]==='open'?'tag-accent':'tag-neutral'}" style="margin-left:auto">${t[3]==='open'?'In progress':'Sent'}</span></span>
+      <span style="font-size:13px">${t[1]}</span><span class="text-muted" style="font-size:12px">${t[2]}</span></button>`).join('')}`;
+  if(S.collectorTab===1) body=`<div style="padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2)">
+      <div class="note">Live location on. Your position is shared with the control room only during shift hours.</div>
+      <div style="border:1px solid var(--color-text);padding:var(--space-3)">
+        <div class="kicker">Current fix</div><div class="mono" style="font-size:15px">${d.lat.toFixed(4)}, ${d.lng.toFixed(4)}</div>
+        <div class="text-muted" style="font-size:12px">Accuracy ${d.acc} m · inside ${d.geo}</div></div>
+      <button class="btn btn-secondary btn-block" data-goto="map">Open full map view</button></div>`;
+  if(S.collectorTab===2) body=`<div style="padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2)">
+      <div class="kicker">Proof for MB-114</div>
+      <div style="height:150px;border:1px solid var(--color-text)">
+        <image-slot id="cam-MB-114" shape="rect" placeholder="Tap to capture"></image-slot></div>
+      <div class="text-muted" style="font-size:11px">Stamped 09:58 · −26.5108, 31.3926 · ±6 m · Manzini CBD</div>
+      <button class="btn btn-primary btn-block" data-act="Photograph attached to MB-114 with its position stamp">Attach to record</button>
+      <div class="note">${POLICY.photoMin} photograph minimum per record. The stamp is written by the handset and cannot be edited in the app.</div></div>`;
+  if(S.collectorTab===3) body=`<div style="padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2)">
+      <div class="kicker">On-net · no airtime</div>
+      ${[['Control room','ext 2202 · Gcina Mahlalela'],['Quality desk','ext 2221 · Nokwanda Vilakati'],['Team call','Manzini North · 4 people']].map(c=>
+        `<button class="taskcard" data-call="NRU-202"><b style="font-family:var(--font-heading);font-size:15px">${c[0]}</b>
+          <span class="text-muted" style="font-size:12px">${c[1]}</span></button>`).join('')}
+      <div class="note">Voice runs on the data bundle. At Opus 16 kbit/s an hour of calls costs about 7 MB.</div></div>`;
+  if(S.collectorTab===4) body=`<div style="padding:var(--space-3)"><div class="row" style="gap:var(--space-3);margin-bottom:var(--space-3)">
+      ${avatar(d.id,d.user,54,d.status)}<div><b style="font-family:var(--font-heading);font-size:16px">${esc(d.user)}</b>
+      <div class="text-muted" style="font-size:12px">ext ${d.ext} · checked in ${d.chkAt}</div></div></div><dl class="kv">
+      ${kvRow('Handset',d.id)}${kvRow('Team',d.team)}${kvRow('Shift',d.shift+' → 16:00')}
+      ${kvRow('Records today',d.rec+' / '+d.tgt)}${kvRow('Photographs',d.photos)}${kvRow('Battery',d.bat+'%')}</dl>
+      <button class="btn btn-secondary btn-block" data-gate="end">End shift</button></div>`;
+  return `<div class="page">
+    ${head('Field side','Collector app','What the enumerator carries. Same system, same tokens, one hand — sharp-cornered widgets and 44 px targets throughout.')}
+    <div class="phonewrap">
+      <div class="phone">
+        <div class="sb"><span>09:47</span><span>NRU Collect</span><span>${d.bat}% ▮</span></div>
+        <div class="apphead"><div class="kicker">Shift active · checked in ${d.chkAt}</div>
+          <div class="row">${avatar(d.id,d.user,30,d.status)}<b style="font-family:var(--font-heading);font-size:17px">${esc(d.user)}</b>
+            <span class="tag tag-accent" style="margin-left:auto">Live</span></div></div>
+        <div class="body">${body}</div>
+        <div class="tabbar">${tabs.map((t,i)=>`<button data-ctab="${i}" aria-pressed="${S.collectorTab===i}">${t}</button>`).join('')}</div>
+      </div>
+      <div class="sect" style="max-width:42ch">
+        <h4>Built to hand over</h4>
+        <p style="font-size:14px">Every surface here is a Flutter-ready layout: one breakpoint set (desktop rail, tablet split, mobile drawer), zero rounded corners, and one state object driving all ten screens.</p>
+        <dl class="kv">${kvRow('Desktop','≥ 1181 px — full rail, split map')}${kvRow('Tablet','681–1180 px — icon rail')}
+          ${kvRow('Mobile','≤ 680 px — drawer nav, bottom sheet')}${kvRow('Min target','44 px')}${kvRow('Corner radius','0 px')}</dl>
+        <div class="note">Selecting any row anywhere in the system opens the same right-side drawer — no transient snackbars.</div>
+      </div>
+    </div></div>`;
+},
+};
+function head(k,t,p){return `<div class="phead"><div><div class="kicker">${k}</div><h2>${t}</h2></div><p>${p}</p></div>`;}
+function stats(rows){return `<div class="stats">${rows.map(r=>`<div class="stat"><b>${r[0]}</b><span>${r[1]}</span>${r[2]?`<em>${r[2]}</em>`:''}</div>`).join('')}</div>`;}
+function rowDevice(d){return `<button class="listrow" data-drawer="device:${d.id}" data-devrow="${d.id}" ${S.sel===d.id?'aria-selected="true"':''}>
+  ${avatar(d.id,d.user,34,d.status)}
+  <span class="who"><b>${esc(d.user)}</b><span>${d.id} · ${d.team}</span></span>
+  <span style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+    <span class="mono" style="font-size:11px">${d.bat}% · ${d.rec}/${d.tgt}</span>
+    <span class="bar ${batCls(d.bat)}" style="width:54px;min-width:0"><i style="width:${d.bat}%"></i></span></span></button>`;}
+
+/* ══ leaflet ═══════════════════════════════════════════════════════════ */
+let M1,M2,layers={marks:[],fences:[],trail:null},M2layers={},saved={};
+function reuse(m,key){ /* render() replaces main.innerHTML — drop a map whose container was destroyed */
+  if(!m)return null;
+  if(document.body.contains(m.getContainer()))return m;
+  saved[key]={c:m.getCenter(),z:m.getZoom()}; m.remove(); return null;}
+function tiles(){const b=BASES[S.base];return L.tileLayer(b.url,{attribution:b.attr,maxZoom:b.max});}
+function pinIcon(d){return L.divIcon({className:'',iconSize:[16,16],iconAnchor:[8,8],
+  html:`<div class="pin ${d.status}${S.sel===d.id?' sel':''}"><small>${d.id.slice(-2)}</small></div>`});}
+
+function drawMap1(){
+  M1=reuse(M1,'m1');
+  if(!M1){
+    const v=saved.m1;
+    M1=L.map('map1',{zoomControl:false,attributionControl:true}).setView(v?v.c:[-26.44,31.28],v?v.z:10);
+    layers.base=tiles().addTo(M1);
+  }
+  layers.marks.forEach(m=>M1.removeLayer(m)); layers.fences.forEach(f=>M1.removeLayer(f));
+  if(layers.trail){M1.removeLayer(layers.trail);layers.trail=null;}
+  layers.marks=filtered().map(d=>{
+    const m=L.marker([d.lat,d.lng],{icon:pinIcon(d)}).addTo(M1)
+      .bindPopup(`<b>${esc(d.user)}</b><br>${d.id} · ${d.status}<br>${d.bat}% battery · ${d.acc} m accuracy`);
+    m.on('click',()=>{S.sel=d.id;openDrawer('device',d.id);syncSel();});
+    return m;});
+  if(S.layers.geo) layers.fences=GEOFENCES.map(g=>L.circle(AREA[g.at],{radius:g.r,color:g.active?'#0088b0':'#7d7979',
+      weight:1.5,dashArray:g.active?null:'4 4',fillColor:'#0088b0',fillOpacity:.07})
+      .addTo(M1).on('click',()=>openDrawer('geo',g.id)));
+  if(S.layers.trail) layers.trail=L.polyline(TRAIL.map(t=>t[2]),{color:'#d6006c',weight:2.5,opacity:.85}).addTo(M1);
+  setTimeout(()=>M1.invalidateSize(),60);
+}
+function drawMap2(){
+  M2=reuse(M2,'m2');
+  if(!M2){const v=saved.m2;M2layers={};
+    M2=L.map('map2',{zoomControl:false}).setView(v?v.c:TRAIL[4][2],v?v.z:13);M2layers.base=[tiles().addTo(M2)];}
+  Object.entries(M2layers).forEach(([k,v])=>{if(k!=='base')v.forEach(l=>{if(M2.hasLayer(l))M2.removeLayer(l);});});
+  const pts=TRAIL.slice(0,S.tIdx+1).map(t=>t[2]);
+  M2layers.line=[L.polyline(TRAIL.map(t=>t[2]),{color:'#7d7979',weight:1.5,dashArray:'3 5'}).addTo(M2),
+    L.polyline(pts,{color:'#d6006c',weight:3}).addTo(M2)];
+  M2layers.dots=TRAIL.map((t,i)=>L.circleMarker(t[2],{radius:i===S.tIdx?7:4,color:'#201e1d',weight:1,
+    fillColor:i===S.tIdx?'#0088b0':(i<=S.tIdx?'#d6006c':'#f3f2f2'),fillOpacity:1})
+    .addTo(M2).on('click',()=>openDrawer('trail',i)).bindTooltip(t[0]+' — '+t[1]));
+  M2.panTo(TRAIL[S.tIdx][2],{animate:true});
+  setTimeout(()=>M2.invalidateSize(),60);
+}
+function syncSel(){
+  document.querySelectorAll('[data-devrow]').forEach(e=>e.setAttribute('aria-selected',String(e.dataset.devrow===S.sel)));
+  layers.marks.forEach((m,i)=>{const d=filtered()[i];if(d)m.setIcon(pinIcon(d));});
+}
+
+/* ══ render + events ═══════════════════════════════════════════════════ */
+function render(){
+  if(S.screen!=='history'&&S.play)setPlay(false);
+  main.innerHTML=screens[S.screen]();
+  main.scrollTop=0;
+  if(S.screen==='map')drawMap1();
+  if(S.screen==='history')drawMap2();
+}
+function stageClass(){
+  const st=document.querySelector('.mapstage'); if(!st)return;
+  st.className='mapstage view-'+S.view+(S.screen==='map'&&!S.layers.labels?' nolabel':'');
+}
+let timer=null;
+function stepTo(i){ /* light playback update — never re-renders the map container */
+  S.tIdx=i;
+  const t=TRAIL[S.tIdx], sc=$('#scrub'), lb=$('#ptime'), lg=$('#plegend');
+  if(sc)sc.value=S.tIdx; if(lb)lb.textContent=t[0]; if(lg)lg.textContent='Position at '+t[0];
+  document.querySelectorAll('[data-trailidx]').forEach(e=>e.setAttribute('aria-selected',String(+e.dataset.trailidx===S.tIdx)));
+  drawMap2();
+}
+function setPlay(on){
+  S.play=on; if(timer){clearInterval(timer);timer=null;}
+  const b=document.querySelector('[data-play]'); if(b)b.textContent=on?'❙❙ Pause':'▶ Play';
+  if(on)timer=setInterval(()=>{if(S.screen!=='history'){setPlay(false);return;}stepTo((S.tIdx+1)%TRAIL.length);},1100);
+}
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-nav],[data-drawer],[data-filter],[data-view],[data-base],[data-pane],[data-layer],[data-map],[data-tab],[data-close],[data-act],[data-trailidx],[data-play],[data-ctab],[data-goto],[data-staff],[data-proof],[data-call],[data-gate]');
+  if(!t)return;
+  if(t.dataset.call){openDrawer('live',t.dataset.call);return;}
+  if(t.dataset.staff){S.staffFilter=t.dataset.staff;render();return;}
+  if(t.dataset.proof){S.proofFilter=t.dataset.proof;render();return;}
+  if(t.dataset.gate){const g=t.dataset.gate;
+    if(g==='fix'){S.gateFix=true;S.gate=1;}
+    else if(g==='next')S.gate=2;
+    else if(g==='start'){S.shift=true;S.collectorTab=0;}
+    else if(g==='end'){S.shift=false;S.gate=0;S.gateFix=false;}
+    render();
+    if(g==='start')openDrawer('act','Shift started 07:12 \u2014 position confirmed 40 m inside Manzini CBD, check-in photograph on file.');
+    if(g==='end')openDrawer('act','Shift ended \u2014 location sharing stopped, re-check-in required at next login.');
+    return;}
+  if(t.dataset.close!==undefined){closeDrawer();return;}
+  if(t.dataset.nav){go(t.dataset.nav);return;}
+  if(t.dataset.act){const g=t.dataset.goto;openDrawer('act',t.dataset.act);if(g&&allowed(g)){S.screen=g;localStorage.setItem('nru.track.screen',g);renderNav();render();}return;}
+  if(t.dataset.goto){go(t.dataset.goto);return;}
+  if(t.dataset.drawer){const [k,id]=t.dataset.drawer.split(':');
+    if(k==='device'){S.sel=id;syncSel();}
+    openDrawer(k,id);return;}
+  if(t.dataset.filter){const f=t.dataset.filter;
+    S.filters.has(f)?S.filters.delete(f):S.filters.add(f);
+    t.setAttribute('aria-pressed',String(S.filters.has(f)));
+    const list=filtered(), box=$('#devlist');
+    if(box)box.innerHTML=list.map(d=>rowDevice(d)).join('');
+    const h=document.querySelector('.mappanel .top h4'); if(h)h.textContent=list.length+' handsets shown';
+    drawMap1();return;}
+  if(t.dataset.base){S.base=t.dataset.base;
+    document.querySelectorAll('[data-base]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.base===S.base)));
+    if(S.screen==='history'&&M2){if(M2layers.base)M2layers.base.forEach(l=>M2.removeLayer(l));M2layers.base=[tiles().addTo(M2)];}
+    else if(M1){if(layers.base)M1.removeLayer(layers.base);layers.base=tiles().addTo(M1);}
+    return;}
+  if(t.dataset.pane!==undefined){S.pane=!S.pane;render();
+    setTimeout(()=>{if(M1)M1.invalidateSize();},80);return;}
+  if(t.dataset.view){S.view=t.dataset.view;
+    document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===S.view)));
+    stageClass();return;}
+  if(t.dataset.layer){const k=t.dataset.layer;S.layers[k]=!S.layers[k];
+    t.setAttribute('aria-pressed',String(S.layers[k]));
+    stageClass(); if(k!=='labels')drawMap1();return;}
+  if(t.dataset.tab){S.tab=+t.dataset.tab;paintDrawer();return;}
+  if(t.dataset.trailidx){setPlay(false);stepTo(+t.dataset.trailidx);openDrawer('trail',t.dataset.trailidx);return;}
+  if(t.dataset.play!==undefined){setPlay(!S.play);return;}
+  if(t.dataset.ctab){S.collectorTab=+t.dataset.ctab;render();return;}
+  if(t.dataset.map){
+    const M=S.screen==='history'?M2:M1; if(!M)return;
+    const a=t.dataset.map;
+    if(a==='in')M.zoomIn(); else if(a==='out')M.zoomOut();
+    else if(a==='fit'){const pts=S.screen==='history'?TRAIL.map(x=>x[2]):filtered().map(d=>[d.lat,d.lng]);
+      if(pts.length)M.fitBounds(pts,{padding:[50,50]});}
+    else if(a==='loc'){const d=dev(S.sel)||filtered()[0];if(d)M.setView([d.lat,d.lng],14);}
+  }
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='scrub'){setPlay(false);stepTo(+e.target.value);}
+  if(e.target.id==='q'){const q=e.target.value.toLowerCase();
+    document.querySelectorAll('#devlist [data-devrow]').forEach(r=>{
+      const d=dev(r.dataset.devrow);
+      r.style.display=(d.user+d.id+d.team).toLowerCase().includes(q)?'':'none';});}
+});
+$('#burger').onclick=()=>rail.classList.toggle('on');
+$('#role').onchange=e=>{S.role=e.target.value;localStorage.setItem('nru.track.role',S.role);
+  if(!allowed(S.screen))S.screen=ROLES[S.role].screens[0];
+  localStorage.setItem('nru.track.screen',S.screen);closeDrawer();renderNav();render();};
+$('#refresh').onclick=()=>{jitter();render();openDrawer('act','Fleet polled — 10 of 12 handsets returned a fresh position.');};
+
+/* gentle liveness: online handsets drift, last-fix counters age */
+function jitter(){
+  DEVICES.forEach(d=>{
+    if(d.status==='online'){d.lat+=(Math.random()-.5)*.0016;d.lng+=(Math.random()-.5)*.0016;d.seen=0;}
+    else d.seen+=1;
+  });
+}
+setInterval(()=>{jitter();if(S.screen==='map'){const keep=S.sel;drawMap1();S.sel=keep;syncSel();}},9000);
+
+const savedRole=localStorage.getItem('nru.track.role');
+if(ROLES[savedRole])S.role=savedRole;
+if(!allowed(S.screen))S.screen=ROLES[S.role].screens[0];
+$('#role').value=S.role;
+renderNav();render();loadPhotos();
+</script>
+</body>
+</html>

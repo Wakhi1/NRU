@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NRU — Accounting Management System</title>
+<link rel="stylesheet" href="_ds/broadsheet-3d70675a-5cf4-4c0c-aa61-673de2c9b619/styles.css">
+<style>
+:root{--radius-sm:0;--radius-md:0;--radius-lg:0;
+  --ok:var(--color-accent);--warn:var(--color-process-yellow);--bad:var(--color-accent-2);--rail:242px}
+html,body{height:100%}
+body{overflow:hidden}
+button{font:inherit}
+.btn,.input,.seg,.card,.tag,.dialog{border-radius:0}
+.btn{white-space:nowrap}
+.radio .dot{border-radius:0}
+#app{height:100dvh;display:grid;grid-template-rows:auto 1fr;background:var(--color-bg)}
+
+.masthead{display:flex;align-items:stretch;gap:var(--space-4);padding:0 var(--space-4);
+  border-bottom:2px solid var(--color-text);background:var(--color-bg);min-height:66px}
+.mh-mark{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) 0}
+.mh-seal{width:38px;height:38px;flex:none;border:1px solid var(--color-text);display:grid;place-items:center;
+  font-size:9px;letter-spacing:.06em;font-family:var(--font-heading);font-weight:600}
+.mh-org{font-family:var(--font-heading);font-weight:600;font-size:13px;line-height:1.12;letter-spacing:.02em;text-transform:uppercase}
+.mh-org small{display:block;font-size:9.5px;letter-spacing:.14em;color:var(--color-accent-700);font-weight:400}
+.mh-title{display:flex;flex-direction:column;justify-content:center;border-left:1px solid var(--color-divider);
+  padding-left:var(--space-4);min-width:0}
+.mh-title strong{font-family:var(--font-heading);font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mh-title span{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--color-neutral-700)}
+.mh-right{margin-left:auto;display:flex;align-items:center;gap:var(--space-2)}
+.period{font-size:12px;color:var(--color-neutral-700);white-space:nowrap}
+.period b{font-family:var(--font-heading)}
+.icobtn{width:34px;height:34px;display:grid;place-items:center;background:transparent;
+  border:1px solid var(--color-divider);cursor:pointer;color:var(--color-text)}
+.icobtn:hover{background:color-mix(in srgb,var(--color-text) 7%,transparent)}
+.icobtn:active{background:color-mix(in srgb,var(--color-text) 14%,transparent)}
+.burger{display:none}
+.rolepick{display:flex;align-items:center;gap:var(--space-2)}
+.rolepick span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-700)}
+.rolepick select{min-height:30px;font-size:12px;width:auto;background:var(--color-bg);border-color:var(--color-text)}
+
+.shell{display:grid;grid-template-columns:var(--rail) 1fr;min-height:0}
+.rail{border-right:1px solid var(--color-divider);padding:var(--space-3) 0;overflow-y:auto;
+  display:flex;flex-direction:column;gap:2px}
+.rail h6{padding:0 var(--space-4);margin:var(--space-3) 0 var(--space-1);color:var(--color-neutral-600)}
+.navitem{display:flex;align-items:center;gap:var(--space-2);padding:9px var(--space-4);background:transparent;
+  border:0;border-left:3px solid transparent;cursor:pointer;text-align:left;font-size:14px;color:var(--color-text);width:100%}
+.navitem:hover{background:color-mix(in srgb,var(--color-accent) 9%,transparent)}
+.navitem[aria-current=page]{border-left-color:var(--color-accent);color:var(--color-accent-700);
+  background:color-mix(in srgb,var(--color-accent) 12%,transparent);font-family:var(--font-heading);font-weight:600}
+.navitem b{margin-left:auto;font-size:11px;font-weight:400;color:var(--color-neutral-600);font-variant-numeric:tabular-nums}
+.railfoot{margin-top:auto;padding:var(--space-3) var(--space-4);border-top:1px solid var(--color-divider);
+  display:flex;flex-direction:column;gap:2px;font-size:11px;line-height:1.35}
+.railfoot b{font-family:var(--font-heading);font-size:13px}
+main{min-height:0;overflow:auto;display:flex;flex-direction:column}
+.page{padding:var(--space-4) var(--space-6) var(--space-8);display:flex;flex-direction:column;gap:var(--space-4);flex:0 0 auto}
+.phead{display:flex;align-items:flex-end;gap:var(--space-4);flex-wrap:wrap}
+.phead h2{margin:0}
+.phead p{margin:0;max-width:54ch;font-size:13px;color:var(--color-neutral-700)}
+.kicker{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-accent-700)}
+.toolbar{display:flex;gap:var(--space-2);flex-wrap:wrap;align-items:center}
+.toolbar .spacer{margin-left:auto}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--space-3) var(--space-6);background:var(--color-bg)}
+.stat{background:transparent;padding:0;border:0}
+.stat b{display:block;font-family:var(--font-heading);font-size:clamp(19px,2vw,27px);line-height:1.05;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.stat span{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--color-neutral-700)}
+.stat em{font-style:normal;font-size:11px;color:var(--color-accent-700);display:block;margin-top:2px}
+.stat em.down{color:var(--color-accent-2-700)}
+.money{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.neg{color:var(--color-accent-2-700)}
+.mono{font-variant-numeric:tabular-nums;font-size:13px}
+.bar{height:6px;background:var(--color-neutral-300);position:relative;flex:1;min-width:60px}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--color-accent);display:block}
+.bar.warn i{background:var(--warn)}.bar.bad i{background:var(--bad)}
+.bar span{position:absolute;top:-3px;bottom:-3px;width:1px;background:var(--color-text)}
+.row{display:flex;align-items:center;gap:var(--space-2)}
+.dot{width:9px;height:9px;display:inline-block;flex:none}
+.dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}
+.dot.idle{background:var(--color-neutral-400)}
+.tbl-wrap{border-top:1px solid var(--color-text);overflow-x:auto;overflow-y:visible;flex:none}
+.table tbody tr{cursor:pointer}
+.table td,.table th{white-space:nowrap}
+.table td.wrap{white-space:normal;min-width:200px}
+.table tfoot td{padding:var(--space-2);border-top:1px solid var(--color-text);
+  font-family:var(--font-heading);font-weight:600}
+.chips{display:flex;gap:var(--space-2);flex-wrap:wrap}
+.chip{padding:5px 12px;font-size:12px;border:1px solid var(--color-divider);background:transparent;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;color:var(--color-text)}
+.chip:hover{background:color-mix(in srgb,var(--color-text) 6%,transparent)}
+.chip[aria-pressed=true]{background:var(--color-accent);border-color:var(--color-accent);color:var(--color-bg)}
+.listrow{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) 0;
+  border-bottom:1px solid color-mix(in srgb,var(--color-text) 9%,transparent);cursor:pointer;
+  background:transparent;width:100%;text-align:left;color:var(--color-text)}
+.listrow:hover{background:color-mix(in srgb,var(--color-accent) 8%,transparent)}
+.listrow .who{min-width:0;flex:1}
+.listrow .who b{display:block;font-family:var(--font-heading);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.listrow .who span{font-size:11px;color:var(--color-neutral-700);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sect{display:flex;flex-direction:column;gap:var(--space-2)}
+.sect > h4{margin:0}
+.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:var(--space-6)}
+.cardgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:var(--space-2);background:var(--color-bg)}
+.tile{background:transparent;padding:var(--space-3);display:flex;flex-direction:column;gap:6px;
+  cursor:pointer;border:0;text-align:left;color:var(--color-text);position:relative}
+.tile:hover{background:color-mix(in srgb,var(--color-accent) 8%,transparent)}
+.tile b{font-family:var(--font-heading);font-size:17px;line-height:1.2;padding-right:26px}
+.tile span{font-size:13px;color:var(--color-neutral-700)}
+.fav{position:absolute;top:var(--space-3);right:var(--space-3);background:transparent;border:0;cursor:pointer;
+  font-size:15px;line-height:1;color:var(--color-neutral-500);padding:2px}
+.fav:hover{color:var(--color-accent)}
+.fav[aria-pressed=true]{color:var(--color-accent)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px var(--space-3);font-size:13px}
+.kv dt{color:var(--color-neutral-700);font-size:12px}
+.kv dd{margin:0;font-variant-numeric:tabular-nums}
+.note{font-size:12px;color:var(--color-neutral-700);border-left:2px solid var(--color-accent);padding-left:var(--space-2)}
+.note.alert{border-left-color:var(--color-accent-2)}
+.spark{display:flex;align-items:flex-end;gap:3px;height:96px}
+.spark i{flex:1;background:var(--color-accent-300);display:block;min-height:2px}
+.spark i.hi{background:var(--color-accent)}
+.spark i.neg{background:var(--color-accent-2-300)}
+.wf{display:flex;flex-direction:column;gap:6px;font-size:12px}
+.wf .step{display:flex;align-items:center;gap:var(--space-2)}
+.wf .step i{width:18px;height:18px;flex:none;display:grid;place-items:center;font-size:11px;font-style:normal;
+  border:1px solid var(--color-text)}
+.wf .step.done i{background:var(--color-accent);color:var(--color-bg);border-color:var(--color-accent)}
+.wf .step.now i{background:var(--color-text);color:var(--color-bg)}
+.wf .step.todo{color:var(--color-neutral-600)}
+ul.plain{margin:0;padding:0}ul.plain li{list-style:none}
+.age{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--space-3) var(--space-4);background:var(--color-bg)}
+.age div{background:transparent;padding:0}
+.age b{display:block;font-family:var(--font-heading);font-size:19px;font-variant-numeric:tabular-nums}
+.age span{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-700)}
+
+#scrim{position:fixed;inset:0;background:color-mix(in srgb,var(--color-neutral-900) 34%,transparent);
+  z-index:900;opacity:0;pointer-events:none;transition:opacity .22s}
+#scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(460px,94vw);background:var(--color-bg);
+  border-left:2px solid var(--color-text);box-shadow:var(--shadow-lg);z-index:950;
+  transform:translateX(102%);transition:transform .26s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.dr-head{padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-text);display:flex;align-items:flex-start;gap:var(--space-3)}
+.dr-head h3{margin:0;font-size:22px}
+.dr-body{overflow-y:auto;padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-4);flex:1}
+.dr-foot{padding:var(--space-3) var(--space-4);border-top:1px solid var(--color-divider);display:flex;gap:var(--space-2);flex-wrap:wrap}
+.tabs{display:flex;border-bottom:1px solid var(--color-divider)}
+.tabs button{padding:8px 12px;background:transparent;border:0;border-bottom:2px solid transparent;cursor:pointer;
+  font-size:13px;color:var(--color-neutral-700)}
+.tabs button[aria-selected=true]{border-bottom-color:var(--color-accent);color:var(--color-accent-700);
+  font-family:var(--font-heading);font-weight:600}
+
+@media (max-width:1180px){
+  :root{--rail:60px}
+  .navitem{justify-content:center;padding:11px 0;gap:0}
+  .navitem span,.navitem b,.rail h6,.railfoot,.rolepick span{display:none}
+  .page{padding:var(--space-4) var(--space-4) var(--space-6)}
+  .mh-title{display:none}
+}
+@media (max-width:680px){
+  .shell{grid-template-columns:1fr}
+  .rail{position:fixed;top:0;bottom:0;left:0;width:238px;z-index:960;background:var(--color-bg);
+    border-right:2px solid var(--color-text);transform:translateX(-102%);transition:transform .24s;padding-top:var(--space-4)}
+  .rail.on{transform:none}
+  .rail h6,.navitem span,.navitem b{display:revert}
+  .railfoot{display:flex}
+  .navitem{justify-content:flex-start;padding:10px var(--space-4);gap:var(--space-2)}
+  .burger{display:grid}
+  .period{display:none}
+  .drawer{width:100%;top:auto;height:88dvh;border-left:0;border-top:2px solid var(--color-text);transform:translateY(102%)}
+  .drawer.on{transform:none}
+  .page{padding:var(--space-3) var(--space-3) var(--space-6)}
+  .age{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="masthead">
+    <button class="icobtn burger" id="burger" aria-label="Menu">☰</button>
+    <div class="mh-mark">
+      <div class="mh-seal">NRU</div>
+      <div class="mh-org">United Nations<br>and Religions<small>World Organization</small></div>
+    </div>
+    <div class="mh-title">
+      <strong>Accounting Management System</strong>
+      <span>Finance Department · linked to Procurement &amp; Fleet</span>
+    </div>
+    <div class="mh-right">
+      <label class="rolepick"><span>Viewing as</span>
+        <select class="input" id="role">
+          <option value="cfo">Head of Finance</option>
+          <option value="acct">Accountant</option>
+          <option value="ap">Accounts payable clerk</option>
+          <option value="budget">Budget holder</option>
+          <option value="audit">Internal auditor</option>
+          <option value="exec">Executive</option>
+        </select></label>
+      <span class="period">Period <b>Aug 2026</b> · open</span>
+      <button class="icobtn" id="close" title="Period close checklist">▣</button>
+    </div>
+  </header>
+  <div class="shell">
+    <nav class="rail" id="rail"></nav>
+    <main id="main"></main>
+  </div>
+</div>
+<div id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-label="Details"></aside>
+
+<script>
+/* ══ data ══════════════════════════════════════════════════════════════ */
+const CUR='E ';
+const fm=n=>CUR+num(Math.round(n));
+const num=n=>n.toLocaleString('en-GB').replace(/,/g,'\u2009');
+const fmS=n=>(n<0?'\u2212'+fm(Math.abs(n)):fm(n));
+
+const ACCOUNTS=[
+ {c:'1000',n:'Bank — Standard Bank current',t:'Asset',bal:4182400,dept:'Finance'},
+ {c:'1010',n:'Bank — Nedbank donor account',t:'Asset',bal:2640150,dept:'Finance'},
+ {c:'1050',n:'Petty cash — Mbabane office',t:'Asset',bal:18400,dept:'Finance'},
+ {c:'1200',n:'Accounts receivable — partners',t:'Asset',bal:1965000,dept:'Finance'},
+ {c:'1400',n:'Fuel stock on hand',t:'Asset',bal:96300,dept:'Fleet'},
+ {c:'1600',n:'Motor vehicles at cost',t:'Asset',bal:5480000,dept:'Fleet'},
+ {c:'1610',n:'Accumulated depreciation — vehicles',t:'Asset',bal:-1712000,dept:'Fleet'},
+ {c:'2000',n:'Accounts payable — vendors',t:'Liability',bal:-1284700,dept:'Procurement'},
+ {c:'2100',n:'Accrued staff claims',t:'Liability',bal:-212400,dept:'Finance'},
+ {c:'2300',n:'Grants received in advance',t:'Liability',bal:-3900000,dept:'Finance'},
+ {c:'3000',n:'Accumulated funds',t:'Equity',bal:-6120000,dept:'Finance'},
+ {c:'4000',n:'Grant income — programmes',t:'Income',bal:-8450000,dept:'Programmes'},
+ {c:'4100',n:'Partner contributions',t:'Income',bal:-1310000,dept:'Partnerships'},
+ {c:'5000',n:'Programme delivery costs',t:'Expense',bal:3960000,dept:'Programmes'},
+ {c:'5200',n:'Procurement — goods & services',t:'Expense',bal:2184000,dept:'Procurement'},
+ {c:'5400',n:'Fleet fuel',t:'Expense',bal:648200,dept:'Fleet'},
+ {c:'5410',n:'Fleet maintenance',t:'Expense',bal:291800,dept:'Fleet'},
+ {c:'5600',n:'IT systems & devices',t:'Expense',bal:412500,dept:'IT'},
+ {c:'6000',n:'Staff costs',t:'Expense',bal:3120000,dept:'Finance'},
+ {c:'6200',n:'Travel & per diem',t:'Expense',bal:386400,dept:'Programmes'},
+];
+const JOURNALS=[
+ {id:'JV-1184',date:'19 Aug',memo:'Fuel issue — August week 3, fleet',dept:'Fleet',amt:86400,status:'Pending approval',src:'Fleet management',by:'Sipho Nkambule',
+  lines:[['5400','Fleet fuel',86400,0],['1400','Fuel stock on hand',0,86400]]},
+ {id:'JV-1183',date:'19 Aug',memo:'PO-2291 goods received — clinic supplies',dept:'Procurement',amt:214600,status:'Posted',src:'Procurement',by:'System',
+  lines:[['5200','Procurement — goods & services',214600,0],['2000','Accounts payable — vendors',0,214600]]},
+ {id:'JV-1182',date:'18 Aug',memo:'Depreciation — vehicles, August',dept:'Fleet',amt:91300,status:'Posted',src:'Fixed assets',by:'System',
+  lines:[['5410','Fleet maintenance',91300,0],['1610','Accumulated depreciation — vehicles',0,91300]]},
+ {id:'JV-1181',date:'18 Aug',memo:'Per diem claims batch — data collection field teams',dept:'Programmes',amt:64800,status:'Pending approval',src:'Expense claims',by:'Lomvula Fakudze',
+  lines:[['6200','Travel & per diem',64800,0],['2100','Accrued staff claims',0,64800]]},
+ {id:'JV-1180',date:'17 Aug',memo:'Grant tranche 3 recognised — WASH programme',dept:'Programmes',amt:1250000,status:'Posted',src:'Manual',by:'Sibongile Mabuza',
+  lines:[['2300','Grants received in advance',1250000,0],['4000','Grant income — programmes',0,1250000]]},
+ {id:'JV-1179',date:'16 Aug',memo:'IT smartphone tranche — 12 handsets',dept:'IT',amt:78400,status:'Draft',src:'Procurement',by:'Ntokozo Dube',
+  lines:[['5600','IT systems & devices',78400,0],['2000','Accounts payable — vendors',0,78400]]},
+];
+const RECEIVABLES=[
+ {id:'INV-0442',party:'Kingdom Health Trust',amt:640000,issued:'02 Aug',due:'01 Sep',paid:0,status:'Sent',prog:'Clinic supply verification'},
+ {id:'INV-0438',party:'Regional Faith Council',amt:385000,issued:'22 Jul',due:'21 Aug',paid:185000,status:'Part paid',prog:'Asset register'},
+ {id:'INV-0431',party:'Matsapha Municipality',amt:220000,issued:'04 Jul',due:'03 Aug',paid:0,status:'Overdue',prog:'Water point audit'},
+ {id:'INV-0427',party:'Southern Diocese Partnership',amt:510000,issued:'28 Jun',due:'28 Jul',paid:0,status:'Overdue',prog:'Household survey'},
+ {id:'INV-0419',party:'Kingdom Health Trust',amt:410000,issued:'12 Jun',due:'12 Jul',paid:410000,status:'Paid',prog:'Clinic supply verification'},
+];
+const PAYABLES=[
+ {id:'AP-3310',vendor:'Swazi Fuel Depot',po:'PO-2288',amt:186000,due:'25 Aug',status:'Approved',match:3,dept:'Fleet',terms:'30 days'},
+ {id:'AP-3309',vendor:'Manzini Medical Supplies',po:'PO-2291',amt:214600,due:'27 Aug',status:'Awaiting approval',match:3,dept:'Procurement',terms:'30 days'},
+ {id:'AP-3307',vendor:'Highveld Motors',po:'PO-2276',amt:98300,due:'22 Aug',status:'Query — price variance',match:2,dept:'Fleet',terms:'30 days'},
+ {id:'AP-3305',vendor:'Eswatini Telecom',po:'—',amt:42800,due:'31 Aug',status:'Approved',match:1,dept:'IT',terms:'On statement'},
+ {id:'AP-3301',vendor:'Nkonyeni Stationers',po:'PO-2270',amt:26400,due:'18 Aug',status:'Overdue',match:3,dept:'Procurement',terms:'14 days'},
+ {id:'AP-3298',vendor:'Highveld Motors',po:'PO-2264',amt:141200,due:'15 Aug',status:'Paid',match:3,dept:'Fleet',terms:'30 days'},
+];
+const POS=[
+ {id:'PO-2291',vendor:'Manzini Medical Supplies',dept:'Health',amt:214600,raised:'06 Aug',grn:'GRN-1140',inv:'AP-3309',status:'Invoiced',buyer:'Procurement'},
+ {id:'PO-2288',vendor:'Swazi Fuel Depot',dept:'Fleet',amt:186000,raised:'04 Aug',grn:'GRN-1136',inv:'AP-3310',status:'Invoiced',buyer:'Fleet'},
+ {id:'PO-2294',vendor:'Ubuntu Water Works',dept:'WASH',amt:320000,raised:'12 Aug',grn:'—',inv:'—',status:'Open — awaiting delivery',buyer:'Procurement'},
+ {id:'PO-2295',vendor:'Sisekelo IT Distribution',dept:'IT',amt:78400,raised:'14 Aug',grn:'GRN-1142',inv:'—',status:'Received — not invoiced',buyer:'IT'},
+ {id:'PO-2276',vendor:'Highveld Motors',dept:'Fleet',amt:92000,raised:'21 Jul',grn:'GRN-1128',inv:'AP-3307',status:'Price variance',buyer:'Fleet'},
+];
+const FLEET=[
+ {v:'Toyota Hilux',reg:'SD 412 AM',dept:'Programmes',fuel:41800,maint:12400,km:2840,budget:60000,driver:'Musa Simelane'},
+ {v:'Toyota Land Cruiser',reg:'SD 118 BN',dept:'WASH',fuel:58200,maint:31600,km:3110,budget:80000,driver:'Bhekithemba Zwane'},
+ {v:'Nissan NP300',reg:'SD 907 CM',dept:'Health',fuel:29400,maint:8200,km:1960,budget:45000,driver:'Lindiwe Maseko'},
+ {v:'Ford Ranger',reg:'SD 233 DN',dept:'Programmes',fuel:36100,maint:44900,km:2210,budget:55000,driver:'Themba Mkhonta'},
+ {v:'Hyundai H1 bus',reg:'SD 651 EM',dept:'Administration',fuel:22600,maint:6100,km:1420,budget:40000,driver:'Pool vehicle'},
+];
+const CLAIMS=[
+ {id:'EC-0891',staff:'Thandeka Dlamini',type:'Per diem — field, 4 nights',amt:6400,dept:'Programmes',status:'Approved',date:'18 Aug'},
+ {id:'EC-0890',staff:'Nomcebo Gama',type:'Fuel reimbursement — own vehicle',amt:2180,dept:'WASH',status:'Awaiting approval',date:'18 Aug'},
+ {id:'EC-0888',staff:'Ntokozo Dube',type:'Airtime & data bundles (12 handsets)',amt:4800,dept:'IT',status:'Awaiting approval',date:'17 Aug'},
+ {id:'EC-0885',staff:'Sandile Magagula',type:'Accommodation — Mbabane workshop',amt:3950,dept:'Health',status:'Query — receipt missing',date:'16 Aug'},
+ {id:'EC-0880',staff:'Zanele Khumalo',type:'Per diem — field, 2 nights',amt:3200,dept:'Programmes',status:'Paid',date:'14 Aug'},
+];
+const BUDGETS=[
+ {dept:'Programmes',bud:4800000,act:3960000,com:320000},
+ {dept:'Procurement',bud:2600000,act:2184000,com:412000},
+ {dept:'Fleet',bud:1050000,act:940000,com:186000},
+ {dept:'IT',bud:520000,act:412500,com:78400},
+ {dept:'Administration',bud:900000,act:704000,com:26400},
+ {dept:'Health',bud:1400000,act:1188000,com:214600},
+];
+const BANK=[
+ {id:'BS-9041',date:'19 Aug',ref:'EFT Kingdom Health Trust',amt:185000,dr:false,matched:'INV-0438'},
+ {id:'BS-9040',date:'19 Aug',ref:'Swazi Fuel Depot payment run',amt:186000,dr:true,matched:'AP-3310'},
+ {id:'BS-9038',date:'18 Aug',ref:'Bank charges — August',amt:1840,dr:true,matched:''},
+ {id:'BS-9036',date:'18 Aug',ref:'Unidentified deposit',amt:74000,dr:false,matched:''},
+ {id:'BS-9034',date:'17 Aug',ref:'Grant tranche 3 — WASH',amt:1250000,dr:false,matched:'JV-1180'},
+ {id:'BS-9031',date:'16 Aug',ref:'Nkonyeni Stationers',amt:26400,dr:true,matched:''},
+];
+const REPORTS=[
+ ['Statement of financial position','Assets, liabilities and funds at any close date.','Statutory'],
+ ['Statement of income & expenditure','Grant income against programme and support costs.','Statutory'],
+ ['Budget versus actual by department','Spend, commitments and remaining budget per department.','Management'],
+ ['Receivables ageing','Which partners are taking longest to settle.','Management'],
+ ['Payables ageing','What each vendor is owed and when it falls due.','Management'],
+ ['Procurement commitment register','Open purchase orders and the budget they encumber.','Linked'],
+ ['Fleet cost per kilometre','Fuel and maintenance per vehicle, posted from fleet management.','Linked'],
+ ['Donor fund utilisation','Tranche receipts against recognised expenditure per grant.','Statutory'],
+ ['Expense claim summary','Staff claims by department, status and ageing.','Management'],
+ ['Audit trail extract','Every posting, approval and amendment for a chosen period.','Governance'],
+];
+const USERS=[
+ {id:'U-01',emp:'E-0301',name:'Sibongile Mabuza',role:'Head of Finance',key:'head_of_finance',rule:1,
+  title:'Head of Finance',unit:'Accounts',grade:'D1',limit:2000000,mfa:true,last:'09:41'},
+ {id:'U-02',emp:'E-0318',name:'Phumzile Dlamini',role:'Accountant',key:'accountant',rule:2,
+  title:'Accountant',unit:'Accounts',grade:'C2',limit:250000,mfa:true,last:'09:36'},
+ {id:'U-03',emp:'E-0322',name:'Bongani Shabangu',role:'Accounts payable clerk',key:'ap_clerk',rule:3,
+  title:'Accounts payable clerk',unit:'Accounts',grade:'B3',limit:50000,mfa:true,last:'09:12'},
+ {id:'U-04',emp:'E-0402',name:'Lomvula Fakudze',role:'Budget holder',key:'budget_holder',rule:4,
+  title:'Programmes manager',unit:'Programmes',grade:'C3',limit:100000,mfa:true,last:'08:52'},
+ {id:'U-05',emp:'E-0114',name:'Ntokozo Dube',role:'Budget holder',key:'budget_holder',rule:4,
+  title:'Head of Information Technology',unit:'Information Technology',grade:'C3',limit:100000,mfa:false,last:'Yesterday'},
+ {id:'U-06',emp:'E-0508',name:'Nokwanda Vilakati',role:'Internal auditor',key:'internal_auditor',rule:5,
+  title:'Internal auditor',unit:'Governance',grade:'C2',limit:0,mfa:true,last:'09:04'},
+ {id:'U-07',emp:'E-0102',name:'Thulisile Nxumalo',role:'Executive',key:'executive',rule:6,
+  title:'Deputy Secretary-General',unit:'Executive office',grade:'D1',limit:0,mfa:true,last:'08:22'},
+];
+const RULES={1:'Unit = Accounts, title contains \u201cHead of Finance\u201d',
+ 2:'Unit = Accounts, job family = accounting',3:'Unit = Accounts, title contains \u201cclerk\u201d',
+ 4:'Named in HRIS as the cost-centre owner for a department',
+ 5:'Unit = Governance, title contains \u201cauditor\u201d',6:'Grade \u2265 senior management'};
+const COLS=['Head of Finance','Accountant','AP clerk','Budget holder','Auditor','Executive'];
+const PERMS=[
+ ['journal.create','Raise a journal entry',1,1,0,0,0,0],
+ ['journal.post','Post to the general ledger',1,1,0,0,0,0],
+ ['ap.invoice.enter','Enter a vendor invoice',1,1,1,0,0,0],
+ ['ap.payment.release','Release a payment run',1,1,0,0,0,0],
+ ['ar.invoice.raise','Raise a receivable invoice',1,1,0,0,0,0],
+ ['bank.reconcile','Reconcile the bank statement',1,1,0,0,0,0],
+ ['claim.approve','Approve an expense claim',1,1,0,1,0,0],
+ ['budget.view','View budget versus actual',1,1,0,1,1,0],
+ ['aggregate.view','View summary financials only',1,1,1,1,1,1],
+ ['coa.amend','Amend the chart of accounts',1,0,0,0,0,0],
+ ['period.close','Lock an accounting period',1,0,0,0,0,0],
+ ['audit.read','Read the audit trail',1,1,1,0,1,0],
+ ['report.export','Export reports (PDF / CSV / XLSX)',1,1,1,1,1,1],
+ ['admin.roles','Change the role\u2192permission policy',1,0,0,0,0,0],
+];
+const LIMITS={head_of_finance:2000000,accountant:250000,ap_clerk:50000,budget_holder:100000,internal_auditor:0,executive:0};
+const ROLEKEYS=[['Head of Finance','head_of_finance',1],['Accountant','accountant',2],
+ ['Accounts payable clerk','ap_clerk',3],['Budget holder','budget_holder',4],['Internal auditor','internal_auditor',5],
+ ['Executive','executive',6]];
+const ELEV=[
+ {who:'Phumzile Dlamini',what:'Payment release to E 500 000',why:'Head of Finance on mission',until:'27 Aug',kind:'Delegation'},
+ {who:'Nomsa Ginindza',what:'Procurement read, Fleet scope',why:'Quarter-end fleet costing',until:'31 Aug',kind:'Elevation'},
+];
+const AUDIT=[
+ ['09:41','Sibongile Mabuza','Approved AP-3310 payment run · E 186 000'],
+ ['09:22','System','Posted JV-1183 from Procurement — PO-2291 goods received'],
+ ['09:05','Bongani Shabangu','Raised query on AP-3307 — price variance E 6 300'],
+ ['08:58','Phumzile Dlamini','Reconciled BS-9034 to JV-1180'],
+ ['08:31','System','Fleet management posted August fuel issue — JV-1184 awaiting approval'],
+ ['08:04','Nokwanda Vilakati','Exported audit trail extract, 01–18 Aug'],
+];
+const CLOSE=[
+ ['Bank accounts reconciled',2,3],['Receivables ageing reviewed',1,1],['Payables cut-off applied',1,1],
+ ['Procurement accruals raised',3,4],['Fleet fuel & depreciation posted',2,2],['Claims batch approved',0,2],
+ ['Grant income recognised',1,1],['Trial balance reviewed by Head of Finance',0,1],
+];
+const MONTHS=['Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
+const INFLOW=[1.1,1.4,0.9,1.8,1.2,1.5,1.3,1.9,1.6,1.2,2.1,1.7];
+const OUTFLOW=[0.9,1.1,1.0,1.3,1.1,1.2,1.4,1.5,1.3,1.1,1.6,1.4];
+
+/* ══ state / roles ═════════════════════════════════════════════════════ */
+const S={screen:localStorage.getItem('nru.acc.screen')||'dash',
+  role:localStorage.getItem('nru.acc.role')||'cfo',
+  favs:new Set(JSON.parse(localStorage.getItem('nru.acc.favs')||'["Budget versus actual by department","Fleet cost per kilometre"]')),
+  drawer:null,tab:0,apFilter:'all'};
+const ROLES={
+ cfo:{label:'Head of Finance',who:'Sibongile Mabuza',scope:'All ledgers · approval limit E 2,000,000',
+   screens:['dash','ledger','journals','ar','ap','bank','claims','procurement','fleet','budgets','reports','admin']},
+ acct:{label:'Accountant',who:'Phumzile Dlamini',scope:'Posting & reconciliation · limit E 250,000',
+   screens:['dash','ledger','journals','ar','ap','bank','claims','procurement','fleet','budgets','reports']},
+ ap:{label:'Accounts payable clerk',who:'Bongani Shabangu',scope:'Payables & procurement matching · limit E 50,000',
+   screens:['ap','procurement','bank','reports']},
+ budget:{label:'Budget holder',who:'Lomvula Fakudze',scope:'Programmes department only · no ledger posting',
+   screens:['budgets','claims','procurement','reports']},
+ audit:{label:'Internal auditor',who:'Nokwanda Vilakati',scope:'Read only · full audit trail',
+   screens:['ledger','journals','ap','ar','bank','reports','admin']},
+ exec:{label:'Executive',who:'Executive viewer',scope:'Summary financials only',screens:['dash','reports']},
+};
+const allowed=k=>ROLES[S.role].screens.includes(k);
+const NAV=[
+ ['Overview',[['dash','Dashboard','◧',null],['budgets','Budgets','▤',()=>BUDGETS.length]]],
+ ['Ledger',[['ledger','Chart of accounts','▦',()=>ACCOUNTS.length],
+   ['journals','Journal entries','✎',()=>JOURNALS.filter(j=>j.status!=='Posted').length],
+   ['bank','Bank reconciliation','⇅',()=>BANK.filter(b=>!b.matched).length]]],
+ ['Transactions',[['ar','Receivables','↙',()=>RECEIVABLES.filter(r=>r.status!=='Paid').length],
+   ['ap','Payables','↗',()=>PAYABLES.filter(p=>p.status!=='Paid').length],
+   ['claims','Expense claims','◇',()=>CLAIMS.filter(c=>c.status.startsWith('Awaiting')).length]]],
+ ['Linked departments',[['procurement','Procurement','▧',()=>POS.length],['fleet','Fleet costs','▭',()=>FLEET.length]]],
+ ['Output',[['reports','Reports','▨',null],['admin','Users & controls','◈',()=>USERS.length]]],
+];
+
+const $=s=>document.querySelector(s),main=$('#main'),drawer=$('#drawer'),scrim=$('#scrim'),rail=$('#rail');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const tagFor=s=>/Paid|Posted|Approved|Invoiced/.test(s)?'tag-accent':/Overdue|Query|variance/.test(s)?'tag-accent-2':'tag-neutral';
+const sum=(a,f)=>a.reduce((x,y)=>x+f(y),0);
+
+/* ══ chrome ════════════════════════════════════════════════════════════ */
+function renderNav(){
+  rail.innerHTML=NAV.map(([grp,items])=>{
+    const vis=items.filter(([k])=>allowed(k)); if(!vis.length)return '';
+    return '<h6>'+grp+'</h6>'+vis.map(([k,label,ico,count])=>{
+      const c=count?count():0;
+      return `<button class="navitem" data-nav="${k}" ${S.screen===k?'aria-current="page"':''} title="${label}">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><text x="8" y="12" text-anchor="middle" font-size="13" fill="currentColor">${ico}</text></svg>
+        <span>${label}</span>${count?`<b>${c}</b>`:''}</button>`}).join('');
+  }).join('')+`<div class="railfoot"><div class="kicker">Signed in as</div><b>${esc(ROLES[S.role].who)}</b>
+    <span>${ROLES[S.role].label}</span><span class="text-muted">${ROLES[S.role].scope}</span></div>`;
+}
+function go(k){
+  if(!allowed(k)){openDrawer('act','The '+ROLES[S.role].label+' role cannot open that view. Ask the Head of Finance for access.');return;}
+  S.screen=k;localStorage.setItem('nru.acc.screen',k);rail.classList.remove('on');closeDrawer();renderNav();render();}
+
+function openDrawer(kind,id){S.drawer={kind,id};S.tab=0;paintDrawer();drawer.classList.add('on');scrim.classList.add('on');}
+function closeDrawer(){S.drawer=null;drawer.classList.remove('on');scrim.classList.remove('on');}
+scrim.onclick=closeDrawer;
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
+
+function drawerShell(kicker,title,sub,tabs,body,foot){
+  return `<div class="dr-head"><div style="flex:1;min-width:0">
+      <div class="kicker">${kicker}</div><h3>${title}</h3>
+      <div class="text-muted" style="font-size:12px">${sub}</div></div>
+      <button class="icobtn" data-close aria-label="Close">✕</button></div>
+    ${tabs?`<div class="tabs" style="padding:0 var(--space-4)">${tabs.map((t,i)=>`<button data-tab="${i}" aria-selected="${S.tab===i}">${t}</button>`).join('')}</div>`:''}
+    <div class="dr-body">${body}</div>${foot?`<div class="dr-foot">${foot}</div>`:''}`;
+}
+const kvRow=(k,v)=>`<dt>${k}</dt><dd>${v}</dd>`;
+function wf(steps){return `<div class="wf">${steps.map(([label,st])=>
+  `<div class="step ${st}"><i>${st==='done'?'✓':st==='now'?'●':'○'}</i>${label}</div>`).join('')}</div>`;}
+function lineTable(lines){return `<div class="tbl-wrap"><table class="table"><thead><tr><th>Account</th><th class="money">Debit</th><th class="money">Credit</th></tr></thead>
+  <tbody>${lines.map(l=>`<tr style="cursor:default"><td class="wrap">${l[0]} · ${l[1]}</td>
+    <td class="money">${l[2]?fm(l[2]):''}</td><td class="money">${l[3]?fm(l[3]):''}</td></tr>`).join('')}</tbody>
+  <tfoot><tr><td>Balanced</td><td class="money">${fm(sum(lines,l=>l[2]))}</td><td class="money">${fm(sum(lines,l=>l[3]))}</td></tr></tfoot></table></div>`;}
+const canApprove=amt=>{const lim={cfo:2000000,acct:250000,ap:50000,budget:100000,audit:0,exec:0}[S.role];
+  return lim>=amt?null:'Above your approval limit of '+fm(lim)+' — routed to the Head of Finance.';}
+
+function paintDrawer(){
+  if(!S.drawer)return; const {kind,id}=S.drawer;
+  if(ENT[kind]){ /* a record may have been deleted or renamed under us */
+    const coll=ENT[kind];
+    if(!DB[coll].some(r=>String(r[KEYF[coll]])===String(id))){
+      drawer.innerHTML=drawerShell('Not found',FORMS[coll].label,'The record is no longer in the ledger',null,
+        `<div class="note alert">${esc(String(id))||'That reference'} could not be found — it may have been deleted or renumbered.</div>`,
+        `<button class="btn btn-secondary" data-close>Dismiss</button>`);
+      return;
+    }
+  }
+  if(kind==='journal'){
+    const j=JOURNALS.find(x=>x.id===id);const block=canApprove(j.amt);
+    drawer.innerHTML=drawerShell('Journal '+j.id,esc(j.memo),j.date+' · '+j.dept+' · raised by '+j.by,['Entry','Source','Audit'],
+      S.tab===0?`<div class="row"><span class="tag ${tagFor(j.status)}">${j.status}</span><span class="mono">${fm(j.amt)}</span></div>
+        ${lineTable(j.lines)}${block?`<div class="note alert">${block}</div>`:''}`
+      :S.tab===1?`<dl class="kv">${kvRow('Origin',j.src)}${kvRow('Raised by',esc(j.by))}${kvRow('Department',j.dept)}${kvRow('Value',fm(j.amt))}</dl>
+        ${wf([['Source document received','done'],['Coded to accounts','done'],[j.status==='Posted'?'Approved':'Awaiting approval',j.status==='Posted'?'done':'now'],['Posted to ledger',j.status==='Posted'?'done':'todo']])}
+        <div class="note">Entries arriving from Procurement and Fleet management are coded automatically and cannot be edited — only approved, queried or reversed.</div>`
+      :`<ul class="plain" style="font-size:12px">${AUDIT.slice(0,4).map(a=>`<li style="padding:5px 0;border-bottom:1px solid color-mix(in srgb,var(--color-text) 8%,transparent)">
+          <b class="mono">${a[0]}</b> · ${esc(a[1])}<br><span class="text-muted">${esc(a[2])}</span></li>`).join('')}</ul>`,
+      j.status==='Posted'?`<button class="btn btn-secondary" data-act="Reversing journal drafted against ${j.id}">Reverse</button>
+        <button class="btn btn-secondary" data-act="${j.id} exported">Export</button>`
+      :`<button class="btn btn-primary" data-act="${block?j.id+' routed to the Head of Finance for approval':j.id+' approved and posted to the ledger'}">${block?'Route for approval':'Approve & post'}</button>
+        <button class="btn btn-secondary" data-act="Query raised on ${j.id} — sent back to ${esc(j.by)}">Query</button>`);
+  }
+  else if(kind==='account'){
+    const a=ACCOUNTS.find(x=>x.c===id);
+    drawer.innerHTML=drawerShell('Account '+a.c,esc(a.n),a.t+' · '+a.dept,null,
+      `<dl class="kv">${kvRow('Balance',fmS(a.bal))}${kvRow('Type',a.t)}${kvRow('Owning department',a.dept)}
+        ${kvRow('Period',' Aug 2026 — open')}</dl>
+       <div class="sect"><h4>Recent movement</h4><ul class="plain">${JOURNALS.filter(j=>j.lines.some(l=>l[0]===a.c)).map(j=>
+        `<li><button class="listrow" data-drawer="journal:${j.id}"><span class="who"><b>${esc(j.memo)}</b>
+          <span>${j.id} · ${j.date} · ${j.status}</span></span><span class="money mono">${fm(j.amt)}</span></button></li>`).join('')||'<li class="text-muted" style="font-size:13px">No movement this period.</li>'}</ul></div>`,
+      `<button class="btn btn-secondary" data-act="${a.c} ledger detail exported to XLSX">Export ledger</button>`);
+  }
+  else if(kind==='ar'){
+    const r=RECEIVABLES.find(x=>x.id===id),out=r.amt-r.paid;
+    drawer.innerHTML=drawerShell('Receivable '+r.id,esc(r.party),r.prog+' · issued '+r.issued,null,
+      `<div class="row"><span class="tag ${tagFor(r.status)}">${r.status}</span><span class="mono">${fm(out)} outstanding</span></div>
+       <dl class="kv">${kvRow('Invoice value',fm(r.amt))}${kvRow('Received',fm(r.paid))}${kvRow('Outstanding',fm(out))}
+        ${kvRow('Due',r.due)}${kvRow('Programme',r.prog)}</dl>
+       ${wf([['Invoice raised','done'],['Sent to partner','done'],[r.paid?'Part payment received':'Payment received',r.paid?'now':'todo'],['Settled in full',r.status==='Paid'?'done':'todo']])}`,
+      `<button class="btn btn-primary" data-act="Reminder sent to ${esc(r.party)} for ${r.id}">Send reminder</button>
+       <button class="btn btn-secondary" data-act="Receipt allocation opened for ${r.id}">Allocate receipt</button>`);
+  }
+  else if(kind==='ap'){
+    const p=PAYABLES.find(x=>x.id===id),block=canApprove(p.amt);
+    drawer.innerHTML=drawerShell('Payable '+p.id,esc(p.vendor),p.dept+' · due '+p.due+' · '+p.terms,['Invoice','Three-way match'],
+      S.tab===0?`<div class="row"><span class="tag ${tagFor(p.status)}">${p.status}</span><span class="mono">${fm(p.amt)}</span></div>
+        <dl class="kv">${kvRow('Purchase order',p.po)}${kvRow('Department',p.dept)}${kvRow('Terms',p.terms)}${kvRow('Due',p.due)}</dl>
+        ${block&&p.status!=='Paid'?`<div class="note alert">${block}</div>`:''}`
+      :`${wf([['Purchase order raised',p.match>=1?'done':'todo'],['Goods received note',p.match>=2?'done':'todo'],
+          ['Vendor invoice matched',p.match>=3?'done':'now'],['Cleared for payment',p.status==='Approved'||p.status==='Paid'?'done':'todo']])}
+        <dl class="kv">${kvRow('Matched documents',p.match+' of 3')}${kvRow('Source',p.po==='—'?'Statement — no PO':'Procurement · '+p.po)}</dl>
+        ${p.match<3?'<div class="note alert">Payment is blocked until the match completes. Procurement holds the open document.</div>':
+          '<div class="note">PO, GRN and invoice agree on quantity and price. Safe to release.</div>'}`,
+      p.status==='Paid'?`<button class="btn btn-secondary" data-act="${p.id} remittance advice re-sent">Re-send remittance</button>`
+      :`<button class="btn btn-primary" data-act="${p.match<3?p.id+' cannot be released — three-way match incomplete':block?p.id+' routed to the Head of Finance':p.id+' added to the next payment run'}">${p.match<3?'Blocked — match incomplete':'Release for payment'}</button>
+        <button class="btn btn-secondary" data-act="Query sent to Procurement on ${p.id}">Query with vendor</button>`);
+  }
+  else if(kind==='po'){
+    const p=POS.find(x=>x.id===id);
+    drawer.innerHTML=drawerShell('Purchase order '+p.id,esc(p.vendor),p.dept+' · raised '+p.raised+' by '+p.buyer,null,
+      `<div class="row"><span class="tag ${tagFor(p.status)}">${p.status}</span><span class="mono">${fm(p.amt)}</span></div>
+       <dl class="kv">${kvRow('Goods received note',p.grn)}${kvRow('Vendor invoice',p.inv)}${kvRow('Committed against',p.dept+' budget')}</dl>
+       ${wf([['Order raised in Procurement','done'],['Delivery received',p.grn!=='—'?'done':'now'],
+         ['Invoice received',p.inv!=='—'?'done':'todo'],['Posted to expense & payables',p.status==='Invoiced'?'done':'todo']])}
+       <div class="note">Open orders encumber the department budget the moment Procurement raises them — the commitment shows on the budget screen before any invoice arrives.</div>`,
+      p.inv!=='—'?`<button class="btn btn-secondary" data-drawer="ap:${p.inv}">Open vendor invoice</button>`
+      :`<button class="btn btn-primary" data-act="Accrual raised for ${p.id} at period end">Raise accrual</button>
+        <button class="btn btn-secondary" data-act="Procurement notified about ${p.id}">Chase Procurement</button>`);
+  }
+  else if(kind==='fleet'){
+    const f=FLEET.find(x=>x.reg===id),tot=f.fuel+f.maint;
+    drawer.innerHTML=drawerShell('Vehicle '+f.reg,esc(f.v),f.dept+' · '+esc(f.driver),null,
+      `<dl class="kv">${kvRow('Fuel — August',fm(f.fuel))}${kvRow('Maintenance — August',fm(f.maint))}
+        ${kvRow('Total',fm(tot))}${kvRow('Distance',num(f.km)+' km')}
+        ${kvRow('Cost per km',CUR+(tot/f.km).toFixed(2))}${kvRow('Monthly budget',fm(f.budget))}</dl>
+       <div class="row" style="font-size:12px"><span style="min-width:96px;color:var(--color-neutral-700)">Against budget</span>
+        <span class="bar ${tot>f.budget?'bad':tot>f.budget*.85?'warn':''}"><i style="width:${Math.min(100,tot/f.budget*100)}%"></i></span>
+        <b class="mono">${Math.round(tot/f.budget*100)}%</b></div>
+       ${tot>f.budget?'<div class="note alert">Over budget this month. Fleet management flagged the maintenance spike for review.</div>':''}
+       <div class="note">Fuel issues and workshop invoices post straight from fleet management into accounts 5400 and 5410 — no re-keying.</div>`,
+      `<button class="btn btn-secondary" data-act="Cost history for ${f.reg} exported">Export cost history</button>
+       <button class="btn btn-secondary" data-drawer="journal:JV-1184">Latest fuel journal</button>`);
+  }
+  else if(kind==='claim'){
+    const c=CLAIMS.find(x=>x.id===id),block=canApprove(c.amt);
+    drawer.innerHTML=drawerShell('Claim '+c.id,esc(c.staff),c.dept+' · '+c.date,null,
+      `<div class="row"><span class="tag ${tagFor(c.status)}">${c.status}</span><span class="mono">${fm(c.amt)}</span></div>
+       <dl class="kv">${kvRow('Claim type',esc(c.type))}${kvRow('Department',c.dept)}${kvRow('Value',fm(c.amt))}</dl>
+       ${wf([['Submitted on handset','done'],['Budget holder review',c.status==='Awaiting approval'?'now':'done'],
+         ['Finance approval',/Paid|Approved/.test(c.status)?'done':'todo'],['Paid with salary run',c.status==='Paid'?'done':'todo']])}
+       ${c.status.startsWith('Query')?'<div class="note alert">Returned to the claimant — supporting receipt not attached.</div>':''}`,
+      /Paid/.test(c.status)?`<button class="btn btn-secondary" data-act="${c.id} payment advice opened">Payment advice</button>`
+      :`<button class="btn btn-primary" data-act="${block?c.id+' routed for higher approval':c.id+' approved for the next payment run'}">${block?'Route for approval':'Approve'}</button>
+        <button class="btn btn-secondary" data-act="${c.id} returned to ${esc(c.staff)}">Return to claimant</button>`);
+  }
+  else if(kind==='budget'){
+    const b=BUDGETS.find(x=>x.dept===id),rem=b.bud-b.act-b.com;
+    drawer.innerHTML=drawerShell('Budget',esc(b.dept),'Financial year 2026 · Aug close pending',null,
+      `<dl class="kv">${kvRow('Approved budget',fm(b.bud))}${kvRow('Actual spend',fm(b.act))}
+        ${kvRow('Committed (open orders)',fm(b.com))}${kvRow('Remaining',`<span class="${rem<0?'neg':''}">${fmS(rem)}</span>`)}
+        ${kvRow('Utilisation',Math.round((b.act+b.com)/b.bud*100)+'%')}</dl>
+       <div class="sect"><h4>Open commitments from Procurement</h4><ul class="plain">${POS.filter(p=>p.inv==='—').map(p=>
+        `<li><button class="listrow" data-drawer="po:${p.id}"><span class="who"><b>${esc(p.vendor)}</b>
+          <span>${p.id} · ${p.status}</span></span><span class="money mono">${fm(p.amt)}</span></button></li>`).join('')}</ul></div>`,
+      `<button class="btn btn-primary" data-act="Virement request drafted for ${esc(b.dept)}">Request virement</button>
+       <button class="btn btn-secondary" data-act="${esc(b.dept)} budget report exported">Export</button>`);
+  }
+  else if(kind==='bank'){
+    const b=BANK.find(x=>x.id===id);
+    drawer.innerHTML=drawerShell('Statement line '+b.id,esc(b.ref),b.date+' · '+(b.dr?'Debit':'Credit'),null,
+      `<div class="row"><span class="tag ${b.matched?'tag-accent':'tag-accent-2'}">${b.matched?'Matched to '+b.matched:'Unmatched'}</span>
+        <span class="mono">${fm(b.amt)}</span></div>
+       ${b.matched?`<dl class="kv">${kvRow('Matched document',b.matched)}${kvRow('Matched by','Phumzile Dlamini')}${kvRow('Difference','E 0')}</dl>`
+        :`<div class="sect"><h4>Suggested matches</h4><ul class="plain">
+          ${[['AP-3301','Nkonyeni Stationers · '+fm(26400)],['INV-0431','Matsapha Municipality · '+fm(220000)]].map(s=>
+          `<li><button class="listrow" data-act="Statement line ${b.id} matched to ${s[0]}"><span class="who"><b>${s[0]}</b><span>${s[1]}</span></span>
+            <span class="tag tag-outline">Match</span></button></li>`).join('')}</ul>
+          <div class="note alert">Unmatched lines block the period close checklist.</div></div>`}`,
+      b.matched?`<button class="btn btn-secondary" data-act="Match on ${b.id} released">Unmatch</button>`
+      :`<button class="btn btn-primary" data-act="Journal drafted for ${b.id} — ${esc(b.ref)}">Post a journal</button>
+        <button class="btn btn-secondary" data-act="${b.id} flagged for investigation">Flag for query</button>`);
+  }
+  else if(kind==='report'){
+    const r=REPORTS.find(x=>x[0]===id);
+    drawer.innerHTML=drawerShell(r[2]+' report',esc(r[0]),'Period 01–19 Aug 2026',null,
+      `<p style="font-size:14px">${esc(r[1])}</p>
+       <div class="field"><label>Period</label><select class="input"><option>01–19 August 2026</option><option>July 2026</option><option>Q3 2026</option><option>Financial year 2026</option></select></div>
+       <div class="field" style="margin-top:var(--space-3)"><label>Scope</label><select class="input"><option>All departments</option>${BUDGETS.map(b=>`<option>${b.dept}</option>`).join('')}</select></div>
+       <div class="field" style="margin-top:var(--space-3)"><label>Format</label>
+        <div class="chips" style="margin-top:5px"><button class="chip" aria-pressed="true">PDF</button><button class="chip">XLSX</button><button class="chip">CSV</button></div></div>
+       ${r[2]==='Linked'?'<div class="note">Figures are drawn live from the linked department system — Procurement or Fleet management — not re-entered by Finance.</div>':''}`,
+      `<button class="btn btn-primary" data-act="${esc(r[0])} generated — download ready">Generate</button>
+       <button class="btn btn-secondary" data-act="${esc(r[0])} scheduled monthly, 1st at 06:00">Schedule monthly</button>`);
+  }
+  else if(kind==='user'){
+    const u=USERS.find(x=>x.id===id),col=COLS.indexOf(u.role==='Accounts payable clerk'?'AP clerk':u.role==='Internal auditor'?'Auditor':u.role);
+    drawer.innerHTML=drawerShell('Role holder '+u.id,esc(u.name),u.role,null,
+      `<dl class="kv">${kvRow('HRIS record',u.emp)}${kvRow('Job title',esc(u.title))}${kvRow('Unit',esc(u.unit))}
+        ${kvRow('Grade',u.grade)}${kvRow('Approval limit',u.limit?fm(u.limit)+' — from grade '+u.grade:'None — read only')}
+        ${kvRow('Two-factor',u.mfa?'Enabled':'<span class="neg">Not enrolled</span>')}${kvRow('Last active',u.last)}</dl>
+       <div class="sect"><h4>How this role was derived</h4>
+        <dl class="kv">${kvRow('Rule matched','#'+u.rule)}${kvRow('Condition',RULES[u.rule])}
+          ${kvRow('Role key','<span class="mono">'+u.key+'</span>')}${kvRow('Scope',u.unit)}
+          ${kvRow('Re-derived','Nightly, and on every HRIS event')}</dl>
+        <div class="note">Job title, unit and grade are owned by HRIS and cannot be edited here. Change the appointment in HRIS and both the role and the approval limit follow.</div></div>
+       <div class="sect"><h4>Effective permissions</h4><ul class="plain" style="font-size:13px">
+        ${PERMS.map(p=>{const v=col>-1?p[2+col]:0;
+        return `<li class="row" style="padding:4px 0"><span style="width:16px;color:${v?'var(--color-accent-700)':'var(--color-neutral-500)'}">${v?'✓':'—'}</span>
+          <span>${p[1]}</span><span class="mono text-muted" style="margin-left:auto;font-size:10px">${p[0]}</span></li>`}).join('')}</ul>
+        <div class="note alert">No user may approve a document they raised, whatever their limit.</div></div>`,
+      `<button class="btn btn-secondary" data-act="Opening ${u.emp} in HRIS — job title, unit and grade are changed there, not here">Open in HRIS</button>
+       <button class="btn btn-secondary" data-act="Temporary delegation granted to ${esc(u.name)} — expires in 30 days, logged against ${esc(ROLES[S.role].who)}">Grant delegation</button>
+       ${u.mfa?'':'<button class="btn btn-secondary" data-act="Two-factor enrolment enforced">Require 2FA</button>'}`);
+  }
+  else if(kind==='close'){
+    const doneAll=CLOSE.filter(c=>c[1]===c[2]).length;
+    drawer.innerHTML=drawerShell('Period close','August 2026','Open · '+doneAll+' of '+CLOSE.length+' steps complete',null,
+      `<ul class="plain">${CLOSE.map(c=>`<li class="row" style="padding:6px 0;border-bottom:1px solid color-mix(in srgb,var(--color-text) 8%,transparent);font-size:13px">
+        <span style="width:16px;color:${c[1]===c[2]?'var(--color-accent-700)':'var(--color-neutral-500)'}">${c[1]===c[2]?'✓':'○'}</span>
+        <span style="flex:1">${c[0]}</span><span class="mono text-muted">${c[1]}/${c[2]}</span></li>`).join('')}</ul>
+       <div class="note alert">The ledger cannot be locked while bank lines are unmatched or claims sit unapproved.</div>`,
+      `<button class="btn btn-primary" data-act="Close blocked — ${CLOSE.length-doneAll} checklist steps outstanding">Lock period</button>
+       <button class="btn btn-secondary" data-act="Trial balance sent to the Head of Finance">Send trial balance</button>`);
+  }
+  else if(kind==='form'){const [c,i]=id.split('|');paintForm(c,i);return;}
+  else if(kind==='del'){const [c,i]=id.split(':');paintDelete(c,i);return;}
+  else if(kind==='act'){
+    drawer.innerHTML=drawerShell('Action','Confirmed',new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),null,
+      `<p style="font-size:15px">${esc(id)}</p><div class="note">Written to the audit trail against ${esc(ROLES[S.role].who)}.</div>`,
+      `<button class="btn btn-secondary" data-close>Dismiss</button>`);
+  }
+  if(ENT[kind])attachCrud(kind,id);
+}
+
+/* ══ CRUD ══════════════════════════════════════════════════════════════ */
+const DB={journals:JOURNALS,accounts:ACCOUNTS,ar:RECEIVABLES,ap:PAYABLES,po:POS,fleet:FLEET,
+  claims:CLAIMS,budgets:BUDGETS,bank:BANK,users:USERS};
+const KEYF={journals:'id',accounts:'c',ar:'id',ap:'id',po:'id',fleet:'reg',claims:'id',budgets:'dept',bank:'id',users:'id'};
+const ENT={journal:'journals',account:'accounts',ar:'ar',ap:'ap',po:'po',fleet:'fleet',
+  claim:'claims',budget:'budgets',bank:'bank',user:'users'};
+const DEPTS=()=>[...new Set(BUDGETS.map(b=>b.dept).concat(['Finance','Partnerships','WASH','Fleet','IT']))];
+const ACCOPT=()=>ACCOUNTS.map(a=>a.c+' · '+a.n);
+const FORMS={
+ journals:{label:'Journal entry',prefix:'JV-',fields:[
+   {k:'date',l:'Date',t:'text',ph:'19 Aug'},{k:'memo',l:'Memo',t:'text',ph:'What this entry is for'},
+   {k:'dept',l:'Department',t:'sel',o:DEPTS},
+   {k:'src',l:'Source',t:'sel',o:()=>['Manual','Procurement','Fleet management','Expense claims','Fixed assets']},
+   {k:'amt',l:'Value',t:'money'},{k:'dr',l:'Debit account',t:'sel',o:ACCOPT},{k:'cr',l:'Credit account',t:'sel',o:ACCOPT},
+   {k:'status',l:'Status',t:'sel',o:()=>['Draft','Pending approval','Posted']}],
+   pre(r){if(r.lines){const d=r.lines.find(l=>l[2]),c=r.lines.find(l=>l[3]);
+     r.dr=d?d[0]+' · '+d[1]:'';r.cr=c?c[0]+' · '+c[1]:'';}},
+   post(r){const pick=s=>ACCOUNTS.find(a=>a.c===String(s).split(' · ')[0]);
+     const d=pick(r.dr),c=pick(r.cr);
+     if(!d||!c)return 'Pick a debit and a credit account.';
+     if(d.c===c.c)return 'Debit and credit cannot be the same account.';
+     r.lines=[[d.c,d.n,r.amt,0],[c.c,c.n,0,r.amt]];r.by=ROLES[S.role].who;}},
+ accounts:{label:'Ledger account',fields:[
+   {k:'c',l:'Account code',t:'text',ph:'5500'},{k:'n',l:'Account name',t:'text'},
+   {k:'t',l:'Type',t:'sel',o:()=>['Asset','Liability','Equity','Income','Expense']},
+   {k:'dept',l:'Owning department',t:'sel',o:DEPTS},{k:'bal',l:'Balance',t:'money',neg:true}],
+   post(r){if(!/^\d{4}$/.test(r.c))return 'Account code must be four digits.';}},
+ ar:{label:'Receivable invoice',prefix:'INV-',fields:[
+   {k:'party',l:'Partner',t:'text'},{k:'prog',l:'Programme',t:'text'},{k:'amt',l:'Invoice value',t:'money'},
+   {k:'paid',l:'Received to date',t:'money',opt:true},{k:'issued',l:'Issued',t:'text',ph:'19 Aug'},
+   {k:'due',l:'Due',t:'text',ph:'18 Sep'},{k:'status',l:'Status',t:'sel',o:()=>['Sent','Part paid','Overdue','Paid']}],
+   post(r){if(r.paid>r.amt)return 'Receipts cannot exceed the invoice value.';}},
+ ap:{label:'Vendor invoice',prefix:'AP-',fields:[
+   {k:'vendor',l:'Vendor',t:'text'},{k:'po',l:'Purchase order',t:'sel',o:()=>['—'].concat(POS.map(p=>p.id))},
+   {k:'dept',l:'Department',t:'sel',o:DEPTS},{k:'amt',l:'Invoice value',t:'money'},
+   {k:'due',l:'Due',t:'text',ph:'25 Aug'},{k:'terms',l:'Terms',t:'sel',o:()=>['14 days','30 days','60 days','On statement']},
+   {k:'match',l:'Documents matched',t:'sel',o:()=>[1,2,3]},
+   {k:'status',l:'Status',t:'sel',o:()=>['Awaiting approval','Approved','Query — price variance','Overdue','Paid']}]},
+ po:{label:'Purchase order',prefix:'PO-',fields:[
+   {k:'vendor',l:'Vendor',t:'text'},{k:'dept',l:'For department',t:'sel',o:DEPTS},{k:'amt',l:'Order value',t:'money'},
+   {k:'raised',l:'Raised',t:'text',ph:'19 Aug'},{k:'buyer',l:'Raised by',t:'sel',o:()=>['Procurement','Fleet','IT','Finance']},
+   {k:'grn',l:'Goods received note',t:'text',ph:'—',opt:true,blank:'—'},{k:'inv',l:'Vendor invoice',t:'text',ph:'—',opt:true,blank:'—'},
+   {k:'status',l:'Status',t:'sel',o:()=>['Open — awaiting delivery','Received — not invoiced','Invoiced','Price variance']}]},
+ fleet:{label:'Vehicle',fields:[
+   {k:'v',l:'Vehicle',t:'text'},{k:'reg',l:'Registration',t:'text',ph:'SD 000 AM'},
+   {k:'dept',l:'Department',t:'sel',o:DEPTS},{k:'driver',l:'Assigned driver',t:'text'},
+   {k:'fuel',l:'Fuel this month',t:'money'},{k:'maint',l:'Maintenance this month',t:'money'},
+   {k:'km',l:'Kilometres run',t:'num'},{k:'budget',l:'Monthly budget',t:'money'}],
+   post(r){if(!r.km)return 'Kilometres must be greater than zero — cost per km is derived from it.';}},
+ claims:{label:'Expense claim',prefix:'EC-',fields:[
+   {k:'staff',l:'Claimant',t:'text'},{k:'type',l:'Claim type',t:'text'},{k:'dept',l:'Department',t:'sel',o:DEPTS},
+   {k:'date',l:'Date',t:'text',ph:'19 Aug'},{k:'amt',l:'Value',t:'money'},
+   {k:'status',l:'Status',t:'sel',o:()=>['Awaiting approval','Approved','Query — receipt missing','Paid']}]},
+ budgets:{label:'Department budget',fields:[
+   {k:'dept',l:'Department',t:'text'},{k:'bud',l:'Approved budget',t:'money'},
+   {k:'act',l:'Actual spend',t:'money',opt:true},{k:'com',l:'Committed',t:'money',opt:true}]},
+ bank:{label:'Statement line',prefix:'BS-',fields:[
+   {k:'date',l:'Date',t:'text',ph:'19 Aug'},{k:'ref',l:'Reference',t:'text'},{k:'amt',l:'Amount',t:'money'},
+   {k:'dr',l:'Direction',t:'bool',yes:'Debit — money out',no:'Credit — money in'},
+   {k:'matched',l:'Matched to',t:'text',ph:'Leave blank if unmatched',opt:true}]},
+ users:{label:'access registration',prefix:'U-',fields:[
+   {k:'emp',l:'HRIS record',t:'text',ph:'E-0331'},{k:'name',l:'Full name (as in HRIS)',t:'text'},
+   {k:'title',l:'HRIS job title',t:'text',ph:'Accountant'},
+   {k:'unit',l:'Unit',t:'sel',o:()=>['Accounts','Programmes','Information Technology','WASH / Health','Governance','Procurement','Fleet management']},
+   {k:'grade',l:'Grade',t:'sel',o:()=>['B3','C2','C3','D1']},
+   {k:'role',l:'Role derived from the appointment',t:'sel',o:()=>ROLEKEYS.map(r=>r[0])},
+   {k:'mfa',l:'Two-factor',t:'bool',yes:'Enabled',no:'Not enrolled'},
+   {k:'last',l:'Last active',t:'text',ph:'09:41'}],
+   post(r,editing){
+     if(!/^E-\d{4}$/.test(r.emp))return 'The HRIS record must read E-nnnn \u2014 this system does not mint employee numbers.';
+     if(USERS.some(u=>u.emp===r.emp&&u.id!==editing))
+       return 'HRIS record '+r.emp+' already has system access. One employee, one identity, one approval limit.';
+     const m=ROLEKEYS.find(x=>x[0]===r.role);
+     if(!m)return 'Pick the role the appointment derives.';
+     r.key=m[1];r.rule=m[2];r.limit=LIMITS[m[1]];
+   }},
+};
+const canWrite=()=>!['audit','exec'].includes(S.role);
+function nextId(coll){const f=FORMS[coll];if(!f.prefix)return '';
+  const n=Math.max(0,...DB[coll].map(r=>parseInt(String(r[KEYF[coll]]).replace(/\D/g,''),10)||0));
+  return f.prefix+String(n+1).padStart(4,'0');}
+const DB_VERSION=3; /* bump when a collection's shape changes — stale saves are dropped, not merged */
+function persist(){try{localStorage.setItem('nru.acc.dbv',String(DB_VERSION));
+  localStorage.setItem('nru.acc.db',JSON.stringify(DB));
+  localStorage.setItem('nru.acc.audit',JSON.stringify(AUDIT.slice(0,40)));}catch(e){}}
+function loadDB(){try{
+  if(+localStorage.getItem('nru.acc.dbv')!==DB_VERSION){
+    localStorage.removeItem('nru.acc.db');localStorage.removeItem('nru.acc.audit');
+    localStorage.setItem('nru.acc.dbv',String(DB_VERSION));return;}
+  const d=JSON.parse(localStorage.getItem('nru.acc.db')||'null');
+  if(d)Object.entries(DB).forEach(([k,arr])=>{if(Array.isArray(d[k])){arr.length=0;d[k].forEach(x=>arr.push(x));}});
+  const a=JSON.parse(localStorage.getItem('nru.acc.audit')||'null');
+  if(Array.isArray(a)){AUDIT.length=0;a.forEach(x=>AUDIT.push(x));}
+}catch(e){}}
+function logAudit(what){AUDIT.unshift([new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),ROLES[S.role].who,what]);}
+const fieldWrap=(f,ctrl)=>`<div class="field" style="margin-bottom:var(--space-3)"><label for="fld-${f.k}">${f.l}${f.opt?' <span class="text-muted">(optional)</span>':''}</label>${ctrl}</div>`;
+function formBody(coll,rec){
+  return `<div id="formerr"></div><form id="crudform" onsubmit="return false">${FORMS[coll].fields.map(f=>{
+    const v=rec[f.k]===undefined||rec[f.k]===null?'':rec[f.k];
+    if(f.t==='sel')return fieldWrap(f,`<select class="input" id="fld-${f.k}" data-f="${f.k}">${f.o().map(o=>
+      `<option ${String(o)===String(v)?'selected':''}>${esc(o)}</option>`).join('')}</select>`);
+    if(f.t==='bool')return fieldWrap(f,`<select class="input" id="fld-${f.k}" data-f="${f.k}">
+      <option value="yes" ${v===true?'selected':''}>${f.yes}</option><option value="no" ${v!==true?'selected':''}>${f.no}</option></select>`);
+    if(f.t==='money'||f.t==='num')return fieldWrap(f,`<input class="input" id="fld-${f.k}" data-f="${f.k}" data-t="num"
+      inputmode="numeric" value="${v===''?'':v}" placeholder="${f.ph||'0'}">`);
+    return fieldWrap(f,`<input class="input" id="fld-${f.k}" data-f="${f.k}" value="${esc(v)}" placeholder="${f.ph||''}">`);
+  }).join('')}</form>`;
+}
+function openForm(coll,id){
+  if(!canWrite()){openDrawer('act','The '+ROLES[S.role].label+' role is read only.');return;}
+  S.drawer={kind:'form',id:coll+'|'+(id||'')};S.tab=0;paintDrawer();
+  drawer.classList.add('on');scrim.classList.add('on');
+}
+function paintForm(coll,id){
+  const f=FORMS[coll],key=KEYF[coll];
+  const src=id?DB[coll].find(r=>String(r[key])===id):null;
+  const rec=src?JSON.parse(JSON.stringify(src)):{};
+  if(src&&f.pre)f.pre(rec);
+  drawer.innerHTML=drawerShell(id?'Edit record':'New record',(id?'':'New ')+f.label,
+    id?key.toUpperCase()+' '+id+' · editing':'Fields marked optional may be left blank',null,
+    formBody(coll,rec),
+    `<button class="btn btn-primary" data-save="${coll}|${id||''}">${id?'Save changes':'Create '+f.label.toLowerCase()}</button>
+     <button class="btn btn-secondary" data-close>Cancel</button>
+     ${id?`<button class="btn btn-secondary" data-del="${coll}:${id}" style="color:var(--color-accent-2-700)">Delete</button>`:''}`);
+}
+function saveForm(coll,id){
+  const f=FORMS[coll],key=KEYF[coll],rec={};
+  drawer.querySelectorAll('[data-f]').forEach(el=>{
+    const fd=f.fields.find(x=>x.k===el.dataset.f);
+    if(fd.t==='bool')rec[fd.k]=el.value==='yes';
+    else if(el.dataset.t==='num'){const n=Number(String(el.value).replace(/[^0-9.\-]/g,''));rec[fd.k]=isNaN(n)?0:n;}
+    else rec[fd.k]=el.value.trim();
+    if(fd.blank!==undefined&&rec[fd.k]==='')rec[fd.k]=fd.blank;
+  });
+  let err=null,badField=null;
+  f.fields.forEach(fd=>{if(!fd.opt&&fd.t!=='bool'&&(rec[fd.k]===''||rec[fd.k]===0&&(fd.t==='money'&&!fd.neg))){
+    if(!err){err='“'+fd.l+'” is required.';badField=fd.k;}}});
+  if(!err&&f.post)err=f.post(rec,id||null)||null;
+  if(err){
+    const box=drawer.querySelector('#formerr');
+    if(box)box.innerHTML=`<div class="note alert" role="alert">${esc(err)}</div>`;
+    drawer.querySelectorAll('[data-f]').forEach(el=>el.style.borderColor='');
+    const body=drawer.querySelector('.dr-body'); if(body)body.scrollTop=0;
+    const bad=badField&&drawer.querySelector('#fld-'+badField);
+    if(bad){bad.style.borderColor='var(--color-accent-2)';bad.focus({preventScroll:true});}
+    return;
+  }
+  const existing=id?DB[coll].find(r=>String(r[key])===id):null;
+  if(existing){Object.assign(existing,rec);logAudit('Edited '+f.label.toLowerCase()+' '+existing[key]);}
+  else{if(!rec[key])rec[key]=nextId(coll);
+    if(DB[coll].some(r=>String(r[key])===String(rec[key]))){
+      drawer.querySelector('#formerr').innerHTML='<div class="note alert" role="alert">That identifier already exists.</div>';
+      const body=drawer.querySelector('.dr-body'); if(body)body.scrollTop=0; return;}
+    DB[coll].unshift(rec);logAudit('Created '+f.label.toLowerCase()+' '+rec[key]);}
+  persist();renderNav();render();
+  openDrawer('act',(existing?'Saved changes to ':'Created ')+f.label.toLowerCase()+' '+(existing?existing[key]:rec[key])+'.');
+}
+function paintDelete(coll,id){
+  const f=FORMS[coll],key=KEYF[coll],rec=DB[coll].find(r=>String(r[key])===id);
+  drawer.innerHTML=drawerShell('Delete',f.label+' '+id,'This cannot be undone',null,
+    `<p style="font-size:15px">Delete ${esc(f.label.toLowerCase())} <b>${esc(id)}</b>${rec&&rec.amt?' worth '+fm(rec.amt):''}?</p>
+     <div class="note alert">The record leaves the ledger view. The deletion itself stays on the audit trail against your name.</div>`,
+    `<button class="btn btn-primary" data-delok="${coll}:${id}" style="background:var(--color-accent-2)">Delete permanently</button>
+     <button class="btn btn-secondary" data-close>Keep record</button>`);
+}
+function doDelete(coll,id){
+  const key=KEYF[coll],i=DB[coll].findIndex(r=>String(r[key])===id);
+  if(i>-1)DB[coll].splice(i,1);
+  logAudit('Deleted '+FORMS[coll].label.toLowerCase()+' '+id);persist();renderNav();render();
+  openDrawer('act','Deleted '+FORMS[coll].label.toLowerCase()+' '+id+'.');
+}
+function attachCrud(kind,id){
+  const coll=ENT[kind];if(!coll||!canWrite())return;
+  let foot=drawer.querySelector('.dr-foot');
+  if(!foot){foot=document.createElement('div');foot.className='dr-foot';drawer.appendChild(foot);}
+  foot.insertAdjacentHTML('beforeend',
+    `<button class="btn btn-secondary" data-edit="${coll}:${id}">Edit</button>
+     <button class="btn btn-secondary" data-del="${coll}:${id}" style="color:var(--color-accent-2-700)">Delete</button>`);
+}
+function newBtn(coll,label){
+  return canWrite()
+    ? `<div class="toolbar"><button class="btn btn-primary" data-new="${coll}">＋ ${label}</button>
+        <span class="text-muted" style="font-size:12px">Create, edit and delete are written to the audit trail.</span></div>`
+    : `<div class="note">Read-only role — records can be opened and exported, not changed.</div>`;
+}
+
+/* ══ screens ═══════════════════════════════════════════════════════════ */
+const head=(k,t,p)=>`<div class="phead"><div><div class="kicker">${k}</div><h2>${t}</h2></div><p>${p}</p></div>`;
+const stats=rows=>`<div class="stats">${rows.map(r=>`<div class="stat"><b>${r[0]}</b><span>${r[1]}</span>${r[2]?`<em class="${r[3]||''}">${r[2]}</em>`:''}</div>`).join('')}</div>`;
+
+const screens={
+dash(){
+  const cash=ACCOUNTS.filter(a=>a.c<'1100').reduce((x,a)=>x+a.bal,0);
+  const arOut=sum(RECEIVABLES,r=>r.amt-r.paid), apOut=sum(PAYABLES.filter(p=>p.status!=='Paid'),p=>p.amt);
+  const bud=sum(BUDGETS,b=>b.bud),act=sum(BUDGETS,b=>b.act),com=sum(BUDGETS,b=>b.com);
+  return `<div class="page">
+    ${head('Finance','Dashboard','Cash, exposure and the two linked departments in one view. Every figure opens the document behind it.')}
+    ${stats([[fm(cash),'Cash & bank','+ '+fm(1250000)+' grant tranche received'],
+      [fm(arOut),'Receivable',fm(730000)+' overdue','down'],
+      [fm(apOut),'Payable',fm(26400)+' overdue','down'],
+      [Math.round((act+com)/bud*100)+'%','Budget utilised',fm(bud-act-com)+' uncommitted'],
+      [JOURNALS.filter(j=>j.status==='Pending approval').length,'Journals awaiting you']])}
+    <div class="split">
+      <div class="sect"><h4>Cash movement — twelve months</h4>
+        <div class="spark">${INFLOW.map((v,i)=>`<i class="${i===11?'hi':''}" style="height:${v/2.2*100}%" title="${MONTHS[i]} in"></i>`).join('')}</div>
+        <div class="spark" style="height:52px">${OUTFLOW.map((v,i)=>`<i class="neg" style="height:${v/2.2*100}%" title="${MONTHS[i]} out"></i>`).join('')}</div>
+        <div class="row text-muted" style="font-size:11px;justify-content:space-between"><span>Sep 2025</span><span>Inflow above · outflow below</span><span>Aug 2026</span></div></div>
+      <div class="sect"><h4>Needs a decision</h4>
+        ${JOURNALS.filter(j=>j.status!=='Posted').map(j=>`<button class="listrow" data-drawer="journal:${j.id}">
+          <span class="dot warn"></span><span class="who"><b>${esc(j.memo)}</b><span>${j.id} · ${j.src} · ${j.dept}</span></span>
+          <span class="money mono">${fm(j.amt)}</span></button>`).join('')}
+        ${PAYABLES.filter(p=>p.match<3&&p.status!=='Paid').map(p=>`<button class="listrow" data-drawer="ap:${p.id}">
+          <span class="dot bad"></span><span class="who"><b>${esc(p.vendor)} — match incomplete</b><span>${p.id} · ${p.po} · ${p.match} of 3 documents</span></span>
+          <span class="money mono">${fm(p.amt)}</span></button>`).join('')}
+        ${BANK.filter(b=>!b.matched).slice(0,2).map(b=>`<button class="listrow" data-drawer="bank:${b.id}">
+          <span class="dot bad"></span><span class="who"><b>${esc(b.ref)} — unmatched</b><span>${b.id} · ${b.date}</span></span>
+          <span class="money mono">${fm(b.amt)}</span></button>`).join('')}</div>
+    </div>
+    <div class="sect"><h4>Receivables ageing</h4>
+      <div class="age">
+        <div><b>${fm(640000)}</b><span>Current</span></div><div><b>${fm(200000)}</b><span>1–30 days</span></div>
+        <div><b>${fm(220000)}</b><span>31–60 days</span></div><div><b>${fm(510000)}</b><span>61–90 days</span></div>
+        <div><b>${fm(0)}</b><span>Over 90 days</span></div></div></div>
+    <div class="sect"><h4>Linked department feeds</h4>
+      <div class="cardgrid">
+        <button class="tile" data-nav="procurement"><span class="kicker">Procurement</span>
+          <b>${POS.filter(p=>p.inv==='—').length} orders awaiting invoice</b>
+          <span>${fm(sum(POS.filter(p=>p.inv==='—'),p=>p.amt))} committed against department budgets.</span></button>
+        <button class="tile" data-nav="fleet"><span class="kicker">Fleet management</span>
+          <b>${fm(sum(FLEET,f=>f.fuel+f.maint))} vehicle costs posted</b>
+          <span>Fuel and workshop invoices for August, ${FLEET.length} vehicles.</span></button>
+        <button class="tile" data-nav="claims"><span class="kicker">Field claims</span>
+          <b>${CLAIMS.filter(c=>c.status.startsWith('Awaiting')).length} claims awaiting approval</b>
+          <span>Submitted from the data-collection handsets.</span></button>
+      </div></div></div>`;
+},
+ledger(){
+  const types=['Asset','Liability','Equity','Income','Expense'];
+  return `<div class="page">
+    ${head('Ledger','Chart of accounts','The single coding structure every department posts into. Codes are owned by Finance; departments can only select them.')}
+    ${stats([[ACCOUNTS.length,'Active accounts'],[fm(sum(ACCOUNTS.filter(a=>a.t==='Asset'),a=>a.bal)),'Total assets'],
+      [fm(-sum(ACCOUNTS.filter(a=>a.t==='Income'),a=>a.bal)),'Income to date'],
+      [fm(sum(ACCOUNTS.filter(a=>a.t==='Expense'),a=>a.bal)),'Expenditure to date'],['E 0','Trial balance difference']])}
+    ${newBtn('accounts','New ledger account')}
+    ${types.map(t=>`<div class="sect"><h4>${t}</h4><div class="tbl-wrap"><table class="table">
+      <thead><tr><th>Code</th><th>Account</th><th>Owning department</th><th class="money">Balance</th></tr></thead>
+      <tbody>${ACCOUNTS.filter(a=>a.t===t).map(a=>`<tr data-drawer="account:${a.c}"><td class="mono">${a.c}</td>
+        <td class="wrap">${esc(a.n)}</td><td class="text-muted">${a.dept}</td>
+        <td class="money ${a.bal<0?'neg':''}">${fmS(a.bal)}</td></tr>`).join('')}</tbody></table></div></div>`).join('')}</div>`;
+},
+journals(){
+  return `<div class="page">
+    ${head('Ledger','Journal entries','Everything posting to the ledger — manual, and automatic from Procurement, Fleet and claims. Nothing posts without an approval inside limit.')}
+    ${stats([[JOURNALS.length,'Entries this period'],[JOURNALS.filter(j=>j.status==='Pending approval').length,'Awaiting approval'],
+      [JOURNALS.filter(j=>j.status==='Draft').length,'Draft'],[fm(sum(JOURNALS,j=>j.amt)),'Value posted or pending']])}
+    ${newBtn('journals','New journal entry')}
+    <div class="tbl-wrap"><table class="table"><thead><tr><th>Entry</th><th>Date</th><th>Memo</th><th>Source</th><th>Department</th><th class="money">Value</th><th>Status</th></tr></thead>
+      <tbody>${JOURNALS.map(j=>`<tr data-drawer="journal:${j.id}"><td class="mono">${j.id}</td><td>${j.date}</td>
+        <td class="wrap">${esc(j.memo)}</td><td class="text-muted">${j.src}</td><td>${j.dept}</td>
+        <td class="money">${fm(j.amt)}</td><td><span class="tag ${tagFor(j.status)}">${j.status}</span></td></tr>`).join('')}</tbody></table></div>
+    <p class="text-muted" style="font-size:12px">Automatic entries from a linked department cannot be edited here — approve, query or reverse.</p></div>`;
+},
+ar(){
+  const out=sum(RECEIVABLES,r=>r.amt-r.paid);
+  return `<div class="page">
+    ${head('Transactions','Receivables','Partner and donor invoices raised by Finance against programme deliverables.')}
+    ${stats([[fm(out),'Outstanding'],[fm(730000),'Overdue','two partners','down'],
+      [RECEIVABLES.filter(r=>r.status!=='Paid').length,'Open invoices'],['34 days','Average days to settle']])}
+    ${newBtn('ar','Raise an invoice')}
+    <div class="tbl-wrap"><table class="table"><thead><tr><th>Invoice</th><th>Partner</th><th>Programme</th><th>Issued</th><th>Due</th><th class="money">Value</th><th class="money">Outstanding</th><th>Status</th></tr></thead>
+      <tbody>${RECEIVABLES.map(r=>`<tr data-drawer="ar:${r.id}"><td class="mono">${r.id}</td><td>${esc(r.party)}</td>
+        <td class="text-muted wrap">${r.prog}</td><td>${r.issued}</td><td>${r.due}</td>
+        <td class="money">${fm(r.amt)}</td><td class="money">${fm(r.amt-r.paid)}</td>
+        <td><span class="tag ${tagFor(r.status)}">${r.status}</span></td></tr>`).join('')}</tbody>
+      <tfoot><tr><td colspan="5">Total</td><td class="money">${fm(sum(RECEIVABLES,r=>r.amt))}</td><td class="money">${fm(out)}</td><td></td></tr></tfoot></table></div></div>`;
+},
+ap(){
+  const open=PAYABLES.filter(p=>p.status!=='Paid');
+  const f=S.apFilter, shown=f==='all'?PAYABLES:f==='block'?PAYABLES.filter(p=>p.match<3):PAYABLES.filter(p=>p.status===f);
+  return `<div class="page">
+    ${head('Transactions','Payables','Vendor invoices arriving against procurement orders. Nothing is released for payment until the purchase order, goods received note and invoice agree.')}
+    ${stats([[fm(sum(open,p=>p.amt)),'Owed to vendors'],[open.filter(p=>p.match<3).length,'Blocked on match','payment held','down'],
+      [fm(26400),'Overdue','Nkonyeni Stationers','down'],[PAYABLES.filter(p=>p.status==='Awaiting approval').length,'Awaiting approval']])}
+    ${newBtn('ap','Enter a vendor invoice')}
+    <div class="chips">${[['all','All'],['Awaiting approval','Awaiting approval'],['block','Match incomplete'],['Overdue','Overdue'],['Paid','Paid']].map(([k,l])=>
+      `<button class="chip" data-apf="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div>
+    <div class="tbl-wrap"><table class="table"><thead><tr><th>Invoice</th><th>Vendor</th><th>Order</th><th>Department</th><th>Due</th><th class="money">Value</th><th>Match</th><th>Status</th></tr></thead>
+      <tbody>${shown.map(p=>`<tr data-drawer="ap:${p.id}"><td class="mono">${p.id}</td><td>${esc(p.vendor)}</td>
+        <td class="mono">${p.po}</td><td class="text-muted">${p.dept}</td><td>${p.due}</td>
+        <td class="money">${fm(p.amt)}</td>
+        <td><span class="tag ${p.match===3?'tag-accent':'tag-accent-2'}">${p.match}/3</span></td>
+        <td><span class="tag ${tagFor(p.status)}">${p.status}</span></td></tr>`).join('')}</tbody></table></div>
+    <div class="note">Three-way match: purchase order from Procurement, goods received note from the receiving department, invoice from the vendor.</div></div>`;
+},
+bank(){
+  const un=BANK.filter(b=>!b.matched);
+  return `<div class="page">
+    ${head('Ledger','Bank reconciliation','Statement lines against the ledger. Unmatched lines block the period close.')}
+    ${stats([[fm(4182400),'Bank balance per statement'],[fm(4182400-74000),'Per ledger'],
+      [un.length,'Unmatched lines','close blocked','down'],[fm(sum(un,b=>b.amt)),'Unmatched value']])}
+    ${newBtn('bank','Add a statement line')}
+    <div class="tbl-wrap"><table class="table"><thead><tr><th>Line</th><th>Date</th><th>Reference</th><th class="money">Debit</th><th class="money">Credit</th><th>Matched to</th></tr></thead>
+      <tbody>${BANK.map(b=>`<tr data-drawer="bank:${b.id}"><td class="mono">${b.id}</td><td>${b.date}</td>
+        <td class="wrap">${esc(b.ref)}</td>
+        <td class="money">${b.dr?fm(b.amt):''}</td><td class="money">${b.dr?'':fm(b.amt)}</td>
+        <td>${b.matched?`<span class="tag tag-accent">${b.matched}</span>`:'<span class="tag tag-accent-2">Unmatched</span>'}</td></tr>`).join('')}</tbody></table></div></div>`;
+},
+claims(){
+  return `<div class="page">
+    ${head('Transactions','Expense claims','Per diem and reimbursement claims submitted from the field handsets, routed through the budget holder before Finance.')}
+    ${stats([[CLAIMS.filter(c=>c.status.startsWith('Awaiting')).length,'Awaiting approval'],
+      [fm(sum(CLAIMS,c=>c.amt)),'Claimed this month'],[CLAIMS.filter(c=>c.status.startsWith('Query')).length,'Returned with query'],
+      ['2.1 days','Average approval time']])}
+    ${newBtn('claims','New expense claim')}
+    <div class="tbl-wrap"><table class="table"><thead><tr><th>Claim</th><th>Claimant</th><th>Type</th><th>Department</th><th>Date</th><th class="money">Value</th><th>Status</th></tr></thead>
+      <tbody>${CLAIMS.map(c=>`<tr data-drawer="claim:${c.id}"><td class="mono">${c.id}</td><td>${esc(c.staff)}</td>
+        <td class="wrap">${esc(c.type)}</td><td class="text-muted">${c.dept}</td><td>${c.date}</td>
+        <td class="money">${fm(c.amt)}</td><td><span class="tag ${tagFor(c.status)}">${c.status}</span></td></tr>`).join('')}</tbody></table></div></div>`;
+},
+procurement(){
+  return `<div class="page">
+    ${head('Linked department','Procurement','Orders raised in the procurement system, with the accounting consequence of each one — commitment, accrual, payable.')}
+    ${stats([[POS.length,'Orders this period'],[fm(sum(POS,p=>p.amt)),'Ordered value'],
+      [fm(sum(POS.filter(p=>p.inv==='—'),p=>p.amt)),'Committed, not invoiced'],
+      [POS.filter(p=>p.status==='Price variance').length,'Price variances','payment held','down']])}
+    ${newBtn('po','Record a purchase order')}
+    <div class="tbl-wrap"><table class="table"><thead><tr><th>Order</th><th>Vendor</th><th>For</th><th>Raised</th><th class="money">Value</th><th>Goods received</th><th>Invoice</th><th>Status</th></tr></thead>
+      <tbody>${POS.map(p=>`<tr data-drawer="po:${p.id}"><td class="mono">${p.id}</td><td>${esc(p.vendor)}</td>
+        <td class="text-muted">${p.dept}</td><td>${p.raised}</td><td class="money">${fm(p.amt)}</td>
+        <td class="mono">${p.grn}</td><td class="mono">${p.inv}</td>
+        <td><span class="tag ${tagFor(p.status)}">${p.status}</span></td></tr>`).join('')}</tbody></table></div>
+    <div class="sect"><h4>How the link works</h4>
+      ${wf([['Procurement raises the order — budget encumbered the same minute','done'],
+        ['Receiving department confirms delivery (GRN)','done'],
+        ['Vendor invoice matched three ways in Accounts payable','now'],
+        ['Expense and payable posted automatically to the ledger','todo'],
+        ['Payment run releases the vendor, commitment cleared','todo']])}</div></div>`;
+},
+fleet(){
+  const tf=sum(FLEET,f=>f.fuel),tm=sum(FLEET,f=>f.maint),tk=sum(FLEET,f=>f.km);
+  return `<div class="page">
+    ${head('Linked department','Fleet costs','Fuel and maintenance posted from fleet management — the monitoring of all NRU fleet movements, priced.')}
+    ${stats([[fm(tf),'Fuel — August'],[fm(tm),'Maintenance — August'],[CUR+((tf+tm)/tk).toFixed(2),'Average cost per km'],
+      [num(tk),'Kilometres run'],[FLEET.filter(f=>f.fuel+f.maint>f.budget).length,'Vehicles over budget','review','down']])}
+    ${newBtn('fleet','Add a vehicle')}
+    <div class="tbl-wrap"><table class="table"><thead><tr><th>Vehicle</th><th>Registration</th><th>Department</th><th>Driver</th><th class="money">Fuel</th><th class="money">Maintenance</th><th class="money">Per km</th><th>Against budget</th></tr></thead>
+      <tbody>${FLEET.map(f=>{const t=f.fuel+f.maint,pc=t/f.budget*100;
+        return `<tr data-drawer="fleet:${f.reg}"><td>${esc(f.v)}</td><td class="mono">${f.reg}</td>
+        <td class="text-muted">${f.dept}</td><td class="text-muted">${esc(f.driver)}</td>
+        <td class="money">${fm(f.fuel)}</td><td class="money">${fm(f.maint)}</td>
+        <td class="money">${CUR+(t/f.km).toFixed(2)}</td>
+        <td><span class="row"><span class="bar ${pc>100?'bad':pc>85?'warn':''}" style="width:70px"><i style="width:${Math.min(100,pc)}%"></i></span>
+          <span class="mono">${Math.round(pc)}%</span></span></td></tr>`}).join('')}</tbody>
+      <tfoot><tr><td colspan="4">Fleet total</td><td class="money">${fm(tf)}</td><td class="money">${fm(tm)}</td><td class="money">${CUR+((tf+tm)/tk).toFixed(2)}</td><td></td></tr></tfoot></table></div>
+    <div class="note">Cutting fuel cost is the stated purpose of fleet monitoring — this table is the accounting side of that mandate.</div></div>`;
+},
+budgets(){
+  return `<div class="page">
+    ${head('Overview','Budgets','Approved budget, actual spend and the commitments procurement has already made against it.')}
+    ${stats([[fm(sum(BUDGETS,b=>b.bud)),'Approved budget'],[fm(sum(BUDGETS,b=>b.act)),'Actual spend'],
+      [fm(sum(BUDGETS,b=>b.com)),'Committed'],[fm(sum(BUDGETS,b=>b.bud-b.act-b.com)),'Uncommitted']])}
+    ${newBtn('budgets','New department budget')}
+    <div class="tbl-wrap"><table class="table"><thead><tr><th>Department</th><th class="money">Budget</th><th class="money">Actual</th><th class="money">Committed</th><th class="money">Remaining</th><th>Utilisation</th></tr></thead>
+      <tbody>${BUDGETS.map(b=>{const u=(b.act+b.com)/b.bud*100,rem=b.bud-b.act-b.com;
+        return `<tr data-drawer="budget:${b.dept}"><td>${b.dept}</td><td class="money">${fm(b.bud)}</td>
+        <td class="money">${fm(b.act)}</td><td class="money">${fm(b.com)}</td>
+        <td class="money ${rem<0?'neg':''}">${fmS(rem)}</td>
+        <td><span class="row"><span class="bar ${u>100?'bad':u>90?'warn':''}" style="width:90px"><i style="width:${Math.min(100,u)}%"></i><span style="left:90%"></span></span>
+          <span class="mono">${Math.round(u)}%</span></span></td></tr>`}).join('')}</tbody>
+      <tfoot><tr><td>Total</td><td class="money">${fm(sum(BUDGETS,b=>b.bud))}</td><td class="money">${fm(sum(BUDGETS,b=>b.act))}</td>
+        <td class="money">${fm(sum(BUDGETS,b=>b.com))}</td><td class="money">${fm(sum(BUDGETS,b=>b.bud-b.act-b.com))}</td><td></td></tr></tfoot></table></div>
+    <p class="text-muted" style="font-size:12px">The marker on each bar is the 90% early-warning threshold.</p></div>`;
+},
+reports(){
+  const groups=['Statutory','Management','Linked','Governance'];
+  return `<div class="page">
+    ${head('Output','Reports','Star the reports you run every month — they stay at the top for your role. Everything exports as PDF, XLSX or CSV.')}
+    ${S.favs.size?`<div class="sect"><h4>Starred</h4><div class="cardgrid">${[...S.favs].map(n=>{
+      const r=REPORTS.find(x=>x[0]===n); return r?tileFor(r):''}).join('')}</div></div>`:''}
+    ${groups.map(g=>`<div class="sect"><h4>${g} reports</h4><div class="cardgrid">
+      ${REPORTS.filter(r=>r[2]===g).map(r=>tileFor(r)).join('')}</div></div>`).join('')}</div>`;
+},
+admin(){
+  return `<div class="page">
+    ${head('Governance','Users, roles &amp; controls','Roles come from HRIS; approval limits follow the grade attached to them. What each role may do is policy, and every exception to it is time-bound.')}
+    ${stats([[USERS.length,'Role holders'],[PERMS.length,'Permissions defined'],
+      [USERS.filter(u=>!u.mfa).length,'Without two-factor','enforce','down'],
+      [ELEV.length,'Live delegations'],[AUDIT.length,'Audit events today']])}
+    <div class="note">People, job titles, units and grades are read from the HRIS database each night and on every HR event. No one is created in this system — an exited employee loses posting rights and their approval limit within minutes.</div>
+    ${newBtn('users','Register an HRIS record for access')}
+    <div class="tbl-wrap"><table class="table"><thead><tr>
+      <th>Role holder</th><th>HRIS job title</th><th>Unit</th><th>Grade</th><th>Derived role</th>
+      <th class="money">Approval limit</th><th>Two-factor</th><th>Last active</th></tr></thead>
+      <tbody>${USERS.map(u=>`<tr data-drawer="user:${u.id}">
+        <td><b style="font-family:var(--font-heading)">${esc(u.name)}</b><br>
+          <span class="text-muted" style="font-size:11px">HRIS ${u.emp}</span></td>
+        <td class="text-muted">${esc(u.title)}</td><td class="text-muted">${esc(u.unit)}</td>
+        <td class="mono">${u.grade}</td>
+        <td><span class="tag tag-outline">${u.role}</span></td>
+        <td class="money">${u.limit?fm(u.limit):'—'}</td>
+        <td>${u.mfa?'<span class="tag tag-accent">Enabled</span>':'<span class="tag tag-accent-2">Not enrolled</span>'}</td>
+        <td class="mono">${u.last}</td></tr>`).join('')}</tbody></table></div>
+    <div class="sect"><h4>Permission matrix</h4>
+      <p class="text-muted" style="font-size:12px">Permissions belong to the role. Scope narrows each one to the holder's HRIS unit — a budget holder approves claims against their own cost centre only.</p>
+      <div class="tbl-wrap"><table class="table"><thead><tr><th>Permission</th><th>Capability</th>${COLS.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+        <tbody>${PERMS.map(p=>`<tr style="cursor:default"><td class="mono" style="font-size:11px">${p[0]}</td><td>${p[1]}</td>${p.slice(2).map(v=>
+          `<td style="color:${v?'var(--color-accent-700)':'var(--color-neutral-500)'}">${v?'✓':'—'}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+      <div class="note alert">Segregation of duties sits above the matrix: no one may approve a document they raised, whatever their limit or role.</div></div>
+    <div class="split">
+      <div class="sect"><h4>How a role is derived</h4>
+        <div>${ROLEKEYS.map(([label,key,rule])=>{const held=USERS.filter(u=>u.key===key);
+          return `<div class="listrow" style="cursor:default">
+          <span class="mono" style="width:22px;color:var(--color-neutral-600)">${rule}</span>
+          <span class="who"><b>${label}</b><span>${RULES[rule]}</span>
+            <span class="text-muted" style="font-size:11px">${held.length?'Held by '+held.map(u=>esc(u.name)).join(', '):'No holder'}</span></span>
+          <span class="money mono">${LIMITS[key]?fm(LIMITS[key]):'—'}</span></div>`}).join('')}</div>
+        <p class="text-muted" style="font-size:12px">Rules are versioned configuration, evaluated in order at each reconciliation. The approval limit follows the HRIS grade, not the person.</p></div>
+      <div class="sect"><h4>Exceptions in force</h4>
+        <div>${ELEV.map(e=>`<button class="listrow" data-act="${e.kind} for ${e.who} — ${e.what}, expires ${e.until}. Renewal requires a fresh grant.">
+          <span class="who"><b>${esc(e.who)}</b><span>${e.what} · ${e.why}</span></span>
+          <span class="tag tag-neutral">until ${e.until}</span></button>`).join('')}</div>
+        <div class="note">Every delegation is time-bound and attributed. Nothing here can be renewed silently.</div>
+        <button class="btn btn-secondary" data-act="Quarterly access review pack generated for each cost-centre owner to confirm">Run access review</button></div>
+    </div>
+    <div class="split">
+      <div class="sect"><h4>Audit trail — today</h4>${AUDIT.map(a=>`<div class="listrow" style="cursor:default">
+        <span class="mono" style="width:42px;color:var(--color-neutral-600)">${a[0]}</span>
+        <span class="who"><b>${esc(a[1])}</b><span>${esc(a[2])}</span></span></div>`).join('')}</div>
+      <div class="sect"><h4>Period close — August 2026</h4>
+        ${CLOSE.map(c=>`<div class="row" style="padding:5px 0;font-size:13px">
+          <span style="width:16px;color:${c[1]===c[2]?'var(--color-accent-700)':'var(--color-neutral-500)'}">${c[1]===c[2]?'✓':'○'}</span>
+          <span style="flex:1">${c[0]}</span><span class="mono text-muted">${c[1]}/${c[2]}</span></div>`).join('')}
+        <button class="btn btn-secondary" data-drawer="close:aug" style="margin-top:var(--space-2)">Open close checklist</button>
+        <button class="btn btn-ghost" data-reset style="margin-top:var(--space-1);align-self:flex-start">Reset demonstration data</button></div>
+    </div></div>`;
+},
+};
+function tileFor(r){return `<div class="tile" data-drawer="report:${r[0]}" role="button" tabindex="0">
+  <span class="kicker">${r[2]}</span><b>${esc(r[0])}</b><span>${esc(r[1])}</span>
+  <button class="fav" data-fav="${r[0]}" aria-pressed="${S.favs.has(r[0])}" aria-label="Star ${esc(r[0])}">${S.favs.has(r[0])?'★':'☆'}</button></div>`;}
+
+/* ══ render + events ═══════════════════════════════════════════════════ */
+function render(){main.innerHTML=screens[S.screen]();main.scrollTop=0;}
+document.addEventListener('click',e=>{
+  const f=e.target.closest('[data-fav]');
+  if(f){const n=f.dataset.fav;S.favs.has(n)?S.favs.delete(n):S.favs.add(n);
+    localStorage.setItem('nru.acc.favs',JSON.stringify([...S.favs]));render();return;}
+  const t=e.target.closest('[data-nav],[data-drawer],[data-close],[data-act],[data-tab],[data-apf],[data-new],[data-edit],[data-del],[data-delok],[data-save],[data-reset]');
+  if(!t)return;
+  if(t.dataset.reset!==undefined){localStorage.removeItem('nru.acc.db');localStorage.removeItem('nru.acc.audit');location.reload();return;}
+  if(t.dataset.new){openForm(t.dataset.new,null);return;}
+  if(t.dataset.edit){const [c,i]=t.dataset.edit.split(':');openForm(c,i);return;}
+  if(t.dataset.del){const [c,i]=t.dataset.del.split(':');openDrawer('del',c+':'+i);return;}
+  if(t.dataset.delok){const [c,i]=t.dataset.delok.split(':');doDelete(c,i);return;}
+  if(t.dataset.save){const [c,i]=t.dataset.save.split('|');saveForm(c,i);return;}
+  if(t.dataset.close!==undefined){closeDrawer();return;}
+  if(t.dataset.nav){go(t.dataset.nav);return;}
+  if(t.dataset.act){openDrawer('act',t.dataset.act);return;}
+  if(t.dataset.drawer){const i=t.dataset.drawer.indexOf(':');openDrawer(t.dataset.drawer.slice(0,i),t.dataset.drawer.slice(i+1));return;}
+  if(t.dataset.tab){S.tab=+t.dataset.tab;paintDrawer();return;}
+  if(t.dataset.apf){S.apFilter=t.dataset.apf;render();return;}
+});
+$('#burger').onclick=()=>rail.classList.toggle('on');
+$('#close').onclick=()=>openDrawer('close','aug');
+$('#role').onchange=e=>{S.role=e.target.value;localStorage.setItem('nru.acc.role',S.role);
+  if(!allowed(S.screen))S.screen=ROLES[S.role].screens[0];
+  localStorage.setItem('nru.acc.screen',S.screen);closeDrawer();renderNav();render();};
+
+loadDB();
+const savedRole=localStorage.getItem('nru.acc.role');
+if(ROLES[savedRole])S.role=savedRole;
+if(!allowed(S.screen))S.screen=ROLES[S.role].screens[0];
+$('#role').value=S.role;
+renderNav();render();
+</script>
+</body>
+</html>
