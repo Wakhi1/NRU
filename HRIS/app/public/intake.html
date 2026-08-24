@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>External data — NRU HRIS</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<div class="page">
+  <div class="page-head">
+    <div><h1>External data</h1><div class="page-sub">Feeds from partners and ministries: intake status and quarantined records awaiting review.</div></div>
+    <button class="btn btn-primary" id="new-feed-btn" style="display:none">+ New feed</button>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table id="feed-table">
+        <thead><tr><th>Source</th><th>Transport</th><th>Cadence</th><th>Owner</th><th>Status</th><th>Last run</th><th>Pending</th><th></th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="feed-empty" style="display:none">No feeds configured yet.</div>
+  </div>
+</div>
+
+<div class="modal-scrim" id="records-modal" style="display:none">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-head">
+      <div><strong id="records-modal-title">Feed records</strong><div class="modal-note">Publish a record into HRIS or quarantine it for review — resolved records leave this queue.</div></div>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <div class="modal-body" id="records-modal-body"></div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script src="/js/voip.js"></script>
+<script src="/js/drawer.js"></script>
+<script src="/js/form-drawer.js"></script>
+<script src="/js/intake.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Asset declarations — NRU HRIS</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<div class="page">
+  <div class="page-head">
+    <div><h1>Asset &amp; interest declarations</h1><div class="page-sub">Personal assets, financial interests, gifts and outside employment — for conflict-of-interest review.</div></div>
+    <button class="btn btn-primary" id="new-decl-btn">+ Declare</button>
+  </div>
+
+  <div class="card">
+    <h3>My declarations</h3>
+    <div class="table-wrap">
+      <table id="mine-table">
+        <thead><tr><th>Category</th><th>Description</th><th>Value</th><th>Declared</th><th>Status</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="mine-empty" style="display:none">No declarations yet.</div>
+  </div>
+
+  <div class="card" id="review-card" style="display:none">
+    <div class="row between">
+      <h3>Review queue</h3>
+      <select id="review-status-filter" style="width:auto;min-width:160px">
+        <option value="submitted">Submitted (awaiting review)</option>
+        <option value="">All statuses</option>
+        <option value="reviewed">Reviewed</option>
+        <option value="flagged">Flagged</option>
+        <option value="draft">Draft</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table id="review-table">
+        <thead><tr><th>Employee</th><th>Category</th><th>Description</th><th>Value</th><th>Declared</th><th>Status</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="review-empty" style="display:none">Nothing in this view.</div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script src="/js/voip.js"></script>
+<script src="/js/form-drawer.js"></script>
+<script src="/js/assets.js"></script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Payroll — NRU HRIS</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<div class="page">
+  <div class="page-head">
+    <div><h1>Payroll</h1><div class="page-sub" id="page-sub">Monthly runs with a four-step review, approval chain and bank file.</div></div>
+    <button class="btn btn-primary" id="new-run-btn" style="display:none">+ New run</button>
+  </div>
+
+  <div id="my-payslips" style="display:none">
+    <h3 style="margin:4px 0 8px">My payslips</h3>
+    <div class="card">
+      <div class="table-wrap">
+        <table id="my-payslips-table">
+          <thead><tr><th>Period</th><th>Status</th><th>Net pay</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="admin-payroll" style="display:none">
+    <h3 style="margin:16px 0 8px">Payroll administration</h3>
+    <div class="card">
+      <div class="table-wrap">
+        <table id="runs-table">
+          <thead><tr><th>Period</th><th>Status</th><th>Employees</th><th>Net total</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="run-detail" style="display:none;margin-top:14px"></div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script src="/js/voip.js"></script>
+<script src="/js/form-drawer.js"></script>
+<script src="/js/payroll.js"></script>
+</body>
+</html>

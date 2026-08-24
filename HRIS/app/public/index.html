@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dashboard — NRU HRIS</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<div class="page" id="dashboard-page">
+  <div class="page-head">
+    <div>
+      <h1>Welcome back</h1>
+      <div class="page-sub" id="welcome-sub">Loading your workspace…</div>
+    </div>
+    <button class="btn btn-primary" id="quick-actions-btn">Quick actions</button>
+  </div>
+
+  <div class="row" id="quick-shortcuts-row" style="gap:8px;margin-bottom:12px;flex-wrap:wrap"></div>
+
+  <div class="grid grid-4" id="kpi-grid"></div>
+
+  <h2 class="section-title" style="margin-top:22px;margin-bottom:8px">Insights</h2>
+  <div class="grid grid-2" id="chart-grid-primary"></div>
+  <div class="grid grid-3" id="chart-grid-secondary" style="margin-top:14px"></div>
+
+  <div class="card" style="margin-top:14px">
+    <div class="row between">
+      <h3>Recent leave activity</h3>
+      <a class="btn btn-ghost btn-sm" href="/leave.html">Open leave queue →</a>
+    </div>
+    <div class="table-wrap">
+      <table id="leave-table">
+        <thead><tr><th>Employee</th><th>Type</th><th>Dates</th><th>Days</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="leave-empty" style="display:none">No recent leave requests in your scope.</div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script src="/js/voip.js"></script>
+<script src="/js/drawer.js"></script>
+<script src="/js/form-drawer.js"></script>
+<script src="/js/vendor/chart.umd.min.js"></script>
+<script src="/js/dashboard.js"></script>
+</body>
+</html>

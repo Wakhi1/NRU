@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Org &amp; groups — NRU HRIS</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<div class="page">
+  <div class="page-head">
+    <div><h1>Org &amp; groups</h1><div class="page-sub">Departments, committees, boards, groups, project teams — and who reports to whom.</div></div>
+    <button class="btn btn-primary" id="new-unit-btn" style="display:none">+ New unit</button>
+  </div>
+
+  <div class="tabs" id="view-tabs">
+    <div class="tab active" data-view="units">Units</div>
+    <div class="tab" data-view="reporting">Reporting</div>
+  </div>
+
+  <div id="units-view">
+    <div class="pill-tabs" id="kind-filter">
+      <span class="badge badge-info clickable" data-kind="">All</span>
+      <span class="badge badge-neutral clickable" data-kind="department">Departments</span>
+      <span class="badge badge-neutral clickable" data-kind="committee">Committees</span>
+      <span class="badge badge-neutral clickable" data-kind="board">Boards</span>
+      <span class="badge badge-neutral clickable" data-kind="group">Groups</span>
+      <span class="badge badge-neutral clickable" data-kind="project_team">Project teams</span>
+    </div>
+    <div class="grid grid-3" id="unit-grid" style="margin-top:14px"></div>
+  </div>
+
+  <div id="reporting-view" style="display:none">
+    <div class="card">
+      <div class="toolbar">
+        <input class="search-input" id="reporting-search" placeholder="Jump to a person — search by name or employee number…" />
+      </div>
+      <div id="org-chart-root"><div class="empty-state"><span class="spinner"></span></div></div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script src="/js/voip.js"></script>
+<script src="/js/form-drawer.js"></script>
+<script src="/js/org.js"></script>
+</body>
+</html>

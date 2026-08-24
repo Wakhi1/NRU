@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Leave — NRU HRIS</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<div class="page">
+  <div class="page-head">
+    <div><h1>Leave</h1><div class="page-sub">Balances, requests and approvals.</div></div>
+    <button class="btn btn-primary" id="new-request-btn">+ Request leave</button>
+  </div>
+
+  <div class="card">
+    <div class="row between"><h3>My balances</h3><button class="btn btn-ghost btn-sm" id="adjust-balance-btn" style="display:none">Adjust a balance</button></div>
+    <div class="grid grid-3" id="balance-grid"></div>
+  </div>
+
+  <div class="card">
+    <h3>My requests</h3>
+    <div class="table-wrap">
+      <table id="my-requests-table">
+        <thead><tr><th>Type</th><th>Dates</th><th>Days</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="my-requests-empty" style="display:none">No requests yet.</div>
+  </div>
+
+  <div class="card" id="approvals-card" style="display:none">
+    <h3>Approvals</h3>
+    <div class="table-wrap">
+      <table id="approvals-table">
+        <thead><tr><th>Employee</th><th>Type</th><th>Dates</th><th>Days</th><th>Reason</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="approvals-empty" style="display:none">Nothing pending.</div>
+  </div>
+
+  <div class="card" id="leave-types-card" style="display:none">
+    <div class="row between"><h3>Leave types</h3><button class="btn btn-ghost btn-sm" id="new-type-btn">+ Add leave type</button></div>
+    <div class="table-wrap">
+      <table id="types-table">
+        <thead><tr><th>Name</th><th>Annual entitlement</th><th>Paid</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script src="/js/voip.js"></script>
+<script src="/js/drawer.js"></script>
+<script src="/js/form-drawer.js"></script>
+<script src="/js/leave.js"></script>
+</body>
+</html>

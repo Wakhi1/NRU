@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Audit trail — NRU HRIS</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<div class="page">
+  <div class="page-head">
+    <div><h1>Audit trail</h1><div class="page-sub">Every create, update, delete and export across the system — who, what, when.</div></div>
+  </div>
+
+  <div class="card">
+    <div class="toolbar" id="audit-filters">
+      <input type="date" id="af-from" title="From date" />
+      <input type="date" id="af-to" title="To date" />
+      <select id="af-actor"><option value="">Actor: all</option></select>
+      <select id="af-action"><option value="">Action: all</option></select>
+      <select id="af-entity"><option value="">Entity: all</option></select>
+      <input id="af-entity-id" placeholder="Entity ID" style="width:110px" />
+      <select id="af-consumer"><option value="">Consumer: all</option></select>
+      <input class="search-input" id="af-q" placeholder="Search actor name, entity id, before/after…" />
+      <button class="btn btn-primary btn-sm" id="af-apply">Apply</button>
+      <button class="btn btn-ghost btn-sm" id="af-clear">Clear</button>
+      <button class="btn btn-ghost btn-sm" id="af-export-csv">Export CSV</button>
+      <button class="btn btn-ghost btn-sm" id="af-export-xlsx">Export XLSX</button>
+      <button class="btn btn-ghost btn-sm" id="af-export-pdf">Export PDF</button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Entity</th><th>Entity ID</th><th>IP</th><th>Via</th><th></th></tr></thead>
+        <tbody id="audit-tbody"></tbody>
+      </table>
+    </div>
+    <div class="row between" style="margin-top:12px">
+      <div class="faint" id="audit-count"></div>
+      <div class="row" style="gap:8px">
+        <button class="btn btn-ghost btn-sm" id="audit-prev">Prev</button>
+        <span class="faint" id="audit-page"></span>
+        <button class="btn btn-ghost btn-sm" id="audit-next">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script src="/js/voip.js"></script>
+<script src="/js/drawer.js"></script>
+<script src="/js/audit.js"></script>
+</body>
+</html>

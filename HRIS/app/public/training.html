@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Training — NRU HRIS</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<div class="page">
+  <div class="page-head">
+    <div><h1>Training</h1><div class="page-sub">Courses, enrollments and certifications.</div></div>
+    <button class="btn btn-primary" id="add-course-btn" style="display:none">+ New course</button>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="courses">Courses</div>
+    <div class="tab" data-tab="certs">My certifications</div>
+  </div>
+
+  <div id="tab-courses">
+    <div class="card">
+      <h3>Available courses</h3>
+      <div class="table-wrap">
+        <table id="courses-table">
+          <thead><tr><th>Name</th><th>Provider</th><th>Category</th><th>Certification</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-certs" style="display:none">
+    <div class="card">
+      <div class="row between"><h3>My certifications</h3><button class="btn btn-ghost btn-sm" id="add-cert-btn" style="display:none">+ Add certification</button></div>
+      <div class="table-wrap">
+        <table id="certs-table">
+          <thead><tr><th>Name</th><th>Issuing body</th><th>Issued</th><th>Expires</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script src="/js/voip.js"></script>
+<script src="/js/form-drawer.js"></script>
+<script src="/js/training.js"></script>
+</body>
+</html>

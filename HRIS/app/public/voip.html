@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VoIP directory — NRU HRIS</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>VoIP directory</h1>
+      <div class="page-sub">Extensions, SIP configuration, call routing and the call log. Simulated CDR only — no SIP/WebRTC provider is wired up.</div>
+    </div>
+    <button class="btn btn-primary" id="new-ext-btn" style="display:none">+ Allocate extension</button>
+  </div>
+
+  <div class="card">
+    <div class="toolbar"><input class="search-input" id="ext-search" placeholder="Search by name, extension or department…" /></div>
+    <div class="table-wrap">
+      <table id="ext-table">
+        <thead><tr><th>Name</th><th>Position</th><th>Department</th><th>Extension</th><th>Device</th><th>Status</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="ext-empty" style="display:none">No extensions found.</div>
+  </div>
+
+  <div class="card">
+    <h3>Recent calls</h3>
+    <div class="table-wrap">
+      <table id="call-table">
+        <thead><tr><th>With</th><th>Started</th><th>Duration</th><th>Direction</th><th>Outcome</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="call-empty" style="display:none">No calls logged yet.</div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script src="/js/voip.js"></script>
+<script src="/js/drawer.js"></script>
+<script src="/js/form-drawer.js"></script>
+<script src="/js/voip-directory.js"></script>
+</body>
+</html>

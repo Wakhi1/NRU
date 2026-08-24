@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Directory — NRU HRIS</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<div class="page">
+  <div class="page-head">
+    <div><h1>Directory</h1><div class="page-sub">People in your scope, with their current role and department.</div></div>
+    <button class="btn btn-primary" id="new-person-btn" style="display:none">+ Add person</button>
+  </div>
+
+  <div class="card">
+    <div class="toolbar">
+      <input class="search-input" id="q" placeholder="Search by name or employee number…" />
+      <select id="department-filter"><option value="">All departments</option></select>
+      <select id="status-filter">
+        <option value="">All statuses</option>
+        <option value="active">Active</option>
+        <option value="on_leave">On leave</option>
+        <option value="suspended">Suspended</option>
+        <option value="exited">Exited</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table id="people-table">
+        <thead><tr><th>Employee</th><th>No.</th><th>Position</th><th>Department</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="people-empty" style="display:none">No people match this filter.</div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script src="/js/voip.js"></script>
+<script src="/js/drawer.js"></script>
+<script src="/js/form-drawer.js"></script>
+<script src="/js/directory.js"></script>
+</body>
+</html>

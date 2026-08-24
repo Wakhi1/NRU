@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 90
+    },
+    "auditLog": "C:\\NRU\\HRIS\\app\\logs\\.568e516bd233183eb8fdf672c04c7773d8966409-audit.json",
+    "files": [
+        {
+            "date": 1787475356959,
+            "name": "C:\\NRU\\HRIS\\app\\logs\\error-2026-08-23.log",
+            "hash": "ccf1c2d9ca85fce07e05293a0c0247a64e7855e8899191b4afea018b9ecc9ffb"
+        },
+        {
+            "date": 1787599328457,
+            "name": "C:\\NRU\\HRIS\\app\\logs\\error-2026-08-24.log",
+            "hash": "40b7fcfa8ed8f63d617b0a988ae91ff6c5d24c21dc507fad3ed9b39a1f868e37"
+        }
+    ],
+    "hashType": "sha256"
+}

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Performance — NRU HRIS</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<div class="page">
+  <div class="page-head">
+    <div><h1>Performance</h1><div class="page-sub">Review cycles, self-ratings and manager ratings.</div></div>
+    <div class="row" style="gap:8px">
+      <select id="cycle-select" style="max-width:240px"></select>
+      <button class="btn btn-ghost" id="delete-cycle-btn" style="display:none">Delete cycle</button>
+      <button class="btn btn-ghost" id="new-cycle-btn" style="display:none">+ New cycle</button>
+      <button class="btn btn-primary" id="new-review-btn" style="display:none">+ Add review</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table id="reviews-table">
+        <thead><tr><th>Employee</th><th>Reviewer</th><th>Self</th><th>Manager</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="reviews-empty" style="display:none">No reviews for this cycle.</div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script src="/js/voip.js"></script>
+<script src="/js/form-drawer.js"></script>
+<script src="/js/performance.js"></script>
+</body>
+</html>

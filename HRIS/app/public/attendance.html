@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Time &amp; attendance — NRU HRIS</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<div class="page">
+  <div class="page-head">
+    <div><h1>Time &amp; attendance</h1><div class="page-sub">Clock events and the daily attendance grid.</div></div>
+  </div>
+
+  <div class="card" id="my-clock-card">
+    <div class="row between">
+      <div>
+        <h3>My clock</h3>
+        <div class="page-sub" id="clock-status">Loading…</div>
+      </div>
+      <button class="btn btn-primary" id="clock-btn" disabled>…</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row between">
+      <h3>Attendance grid</h3>
+    </div>
+    <div class="toolbar">
+      <div class="form-row" style="margin-bottom:0"><label>From</label><input type="date" id="from-date" /></div>
+      <div class="form-row" style="margin-bottom:0"><label>To</label><input type="date" id="to-date" /></div>
+      <div class="form-row" style="margin-bottom:0;flex:1;min-width:180px"><label>Employee no.</label><input id="emp-filter" placeholder="NRU-0001" /></div>
+      <button class="btn btn-ghost btn-sm" id="filter-btn" style="align-self:flex-end">Apply</button>
+    </div>
+    <div class="table-wrap">
+      <table id="grid-table">
+        <thead><tr><th>Employee</th><th>Department</th><th>In</th><th>Out</th><th>Hours</th><th>Status</th><th>Source</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="grid-empty" style="display:none">No timer entries in this range.</div>
+  </div>
+
+  <div class="card" id="shift-admin-card" style="display:none">
+    <div class="row between">
+      <h3>Shift patterns</h3>
+      <button class="btn btn-primary btn-sm" id="new-shift-btn">+ Add shift pattern</button>
+    </div>
+    <div class="table-wrap">
+      <table id="shift-table">
+        <thead><tr><th>Name</th><th>Pattern</th><th>Contracted hrs</th><th>Grace (min)</th><th>Capture source</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script src="/js/voip.js"></script>
+<script src="/js/drawer.js"></script>
+<script src="/js/form-drawer.js"></script>
+<script src="/js/attendance.js"></script>
+</body>
+</html>

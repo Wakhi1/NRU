@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Integrations — NRU HRIS</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<div class="page">
+  <div class="page-head">
+    <div><h1>Integrations</h1><div class="page-sub">API keys for other systems (smartphone tracking, accounting, fleet/logistics) to pull employee and timesheet data. See <code>docs/INTEGRATION.md</code> for the full guide.</div></div>
+    <button class="btn btn-primary" id="new-key-btn">+ New API key</button>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table id="keys-table">
+        <thead><tr><th>Name</th><th>Prefix</th><th>Scopes</th><th>Status</th><th>Last used</th><th>Created</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script src="/js/voip.js"></script>
+<script src="/js/drawer.js"></script>
+<script src="/js/form-drawer.js"></script>
+<script src="/js/integration-keys.js"></script>
+</body>
+</html>

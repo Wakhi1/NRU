@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Employee — NRU HRIS</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<div class="page">
+  <div class="page-head">
+    <div class="row" style="gap:14px;align-items:center">
+      <div id="emp-photo-wrap" style="position:relative">
+        <div class="avatar" id="emp-photo" style="width:56px;height:56px;font-size:18px"></div>
+        <label id="emp-photo-edit" for="emp-photo-input" title="Change photo" style="display:none;position:absolute;bottom:-4px;right:-4px;width:22px;height:22px;background:var(--color-primary);color:#fff;border:1px solid #fff;align-items:center;justify-content:center;font-size:11px;cursor:pointer">&#9998;</label>
+        <input type="file" id="emp-photo-input" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none" />
+      </div>
+      <div>
+        <h1 id="emp-name">Loading…</h1>
+        <div class="page-sub" id="emp-sub"></div>
+      </div>
+    </div>
+    <div class="row" style="gap:8px">
+      <button class="btn btn-ghost" id="edit-toggle-btn" style="display:none">Edit profile</button>
+      <a class="btn btn-ghost" href="/directory.html">← Back to directory</a>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+  <div id="tab-content"></div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script src="/js/voip.js"></script>
+<script src="/js/drawer.js"></script>
+<script src="/js/form-drawer.js"></script>
+<script src="/js/employee.js"></script>
+</body>
+</html>
