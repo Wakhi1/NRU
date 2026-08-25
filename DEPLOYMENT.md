@@ -4,38 +4,61 @@ This repo is a monorepo (`ACCOUNTING/`, `HRIS/`, `SPTS/` at the root) but only `
 live Node application at `hris.docsecuresd.com`. Your hosting account has **cPanel File Manager,
 FTP accounts, Git Version Control, and phpMyAdmin** — no SSH/terminal. This guide sets up:
 
-1. A GitHub Actions workflow that FTPs `HRIS/app` to the server automatically on every push to
+1. A one-time fix for the actual deployed folder structure, which is why photo/logo uploads
+   fail — it's not a missing folder, it's a flattened directory layout.
+2. A GitHub Actions workflow that FTPs `HRIS/app` to the server automatically on every push to
    `main` and restarts the Node app — no manual File Manager uploads after this is wired up.
-2. A one-time fix for the missing `uploads/` folder that's been breaking photo/logo uploads.
 3. A clean production database (System administrator + HR administrator only, no demo data).
 
 Do these roughly in order — each section says what depends on what.
 
 ---
 
-## 1. One-time server fixes (File Manager)
+## 1. Fix the deployed folder structure (File Manager)
 
-### 1a. Create the missing `uploads/` folder
+### The actual bug, confirmed from your File Manager screenshot
 
-The `ENOENT: no such file or directory, open '/home/USERNAME/uploads/...'` error you saw on
-profile photo upload means this folder doesn't exist on the server. Same root cause very likely
-explains the silent branding logo/favicon failures.
+Your app's real root is **`/home/docsyrgv/hris.docsecuresd.com`**. In the repo, everything under
+`HRIS/app/src/` (`config`, `db`, `platform`, `routes`, `validators`, `server.js`, ...) is meant to
+live inside an `src/` subfolder, one level below the app root — e.g. `app/src/routes/people.routes.js`.
+On the server right now, `src/`'s contents were flattened directly into the app root instead:
+`hris.docsecuresd.com/routes/people.routes.js`, no `src/` folder at all.
 
-- In cPanel File Manager, go to your Node app's **Application root** (the same folder you set
-  in "Setup Node.js App" — e.g. `/home/USERNAME/nodeapp`).
-- Create a new folder named exactly `uploads` there, as a sibling of `src/` and `public/`.
-- Right-click it → Permissions → set to `755`.
-- Confirm `public/img/` already exists (it should, since it ships with the deployed code and the
-  default logo renders today) — if not, create that too with `755`.
+That one missing directory level breaks any code that computes a path as
+`path.join(__dirname, '..', '..', 'something')` — two levels up, correct only when the file is
+truly two levels below the app root (`app/src/routes/*.js`). With the flattening, `routes/*.js` is
+only **one** level below the app root now, so the same computation overshoots by one directory —
+landing at `/home/docsyrgv/uploads` instead of `/home/docsyrgv/hris.docsecuresd.com/uploads`. That's
+exactly the `ENOENT: .../home/docsyrgv/uploads/...` error from the profile photo upload, and the
+identical pattern in `branding.routes.js` almost certainly explains the silent logo/favicon
+failure too. CSS/JS/the default logo still render fine because those are served as plain static
+files directly from `public/` by Apache/LiteSpeed before the request ever reaches Node — only the
+handful of *dynamic* upload/serve routes go through the broken `__dirname` math.
 
-### 1b. Find your Application root and Node app details
+**The fix is to restore the real `src/` nesting, not to scatter folders around to match the
+flattened layout.** Section 2's automated deploy does this correctly on its own (it uploads
+`HRIS/app/` as-is, `src/` included) — you just need two manual steps alongside it:
 
-Open cPanel → **Setup Node.js App**, click into your HRIS app, and note:
+1. **Before or right after the first automated deploy**, go to cPanel → **Setup Node.js App** →
+   your HRIS app, and change **Application startup file** from `server.js` to `src/server.js`.
+   Save and restart.
+2. **After confirming the app works** (dashboard loads with no JSON toast, photo/logo upload
+   succeed), go back into File Manager and delete the now-stale top-level `config/`, `db/`,
+   `platform/`, `routes/`, `validators/`, and `server.js` sitting directly under
+   `hris.docsecuresd.com` — those are the old flattened copies, now superseded by the ones inside
+   `src/`. **Leave `public/`, `uploads/`, `docs/`, `logs/`, `node_modules/`, `.env`, `.htaccess`,
+   and `tmp/` alone** — those are correctly placed as siblings of `src/`, exactly where the code
+   expects them.
 
-- **Application root** — e.g. `/home/USERNAME/nodeapp` (you'll need this for step 2 and 3)
-- **Application URL** — should be `hris.docsecuresd.com`
-- There's a **Restart** button here too — you can always use this manually instead of the
-  automated `tmp/restart.txt` trick the CI workflow uses, if you ever need to force a restart.
+If `uploads/` doesn't already exist as a sibling of `public/` once `src/` is restored, create it
+with `755` permissions — it should already be there per your screenshot, so likely nothing to do.
+
+### Application root, for reference
+
+- **Application root**: `/home/docsyrgv/hris.docsecuresd.com`
+- **Application URL**: `hris.docsecuresd.com`
+- cPanel's Setup Node.js App page also has a **Restart** button — use it any time instead of the
+  automated `tmp/restart.txt` trick if you need to force a restart manually.
 
 ---
 
@@ -50,7 +73,7 @@ Application root specifically (safer than using the account's root FTP login). N
   shows the exact host to use)
 - FTP username
 - FTP password
-- The **absolute server path** to the Application root from step 1b (e.g. `/home/USERNAME/nodeapp`)
+- The **absolute server path** to the Application root: `/home/docsyrgv/hris.docsecuresd.com`
 
 ### 2b. Add GitHub repository secrets
 
@@ -62,7 +85,7 @@ Add all four:
 | `FTP_SERVER` | your FTP host |
 | `FTP_USERNAME` | your FTP username |
 | `FTP_PASSWORD` | your FTP password |
-| `FTP_APP_DIR` | the Application root path, e.g. `/home/USERNAME/nodeapp` |
+| `FTP_APP_DIR` | `/home/docsyrgv/hris.docsecuresd.com` |
 
 Secrets are encrypted and never appear in logs or in this repo.
 
@@ -92,15 +115,14 @@ secondary, manual way to pull/inspect code on the server even if you don't use i
 CI trigger:
 
 - Repository URL: `https://github.com/Wakhi1/NRU.git`
-- Clone it to somewhere **outside** your live app folder, e.g. `/home/USERNAME/repositories/NRU`
+- Clone it to somewhere **outside** your live app folder, e.g. `/home/docsyrgv/repositories/NRU`
   (it clones the whole monorepo — `ACCOUNTING`/`SPTS` included — so it shouldn't itself be the
   document root or Node app root).
-- A `.cpanel.yml` is already committed at the repo root. Edit the `DEPLOYPATH` line in it to your
-  real Application root (from step 1b) before relying on it:
+- A `.cpanel.yml` is already committed at the repo root, already pointed at your real path:
   ```yaml
   deployment:
     tasks:
-      - export DEPLOYPATH=/home/USERNAME/nodeapp/
+      - export DEPLOYPATH=/home/docsyrgv/hris.docsecuresd.com/
       - /bin/cp -R HRIS/app/* $DEPLOYPATH
       - /bin/touch $DEPLOYPATH/tmp/restart.txt
   ```
@@ -144,13 +166,16 @@ don't run the import over existing data, since `seed-production.sql`'s `INSERT`s
 
 ## Recap: what to do, in order
 
-1. File Manager: create `uploads/` folder, `755` permissions. (§1a)
-2. Note your Application root path from Setup Node.js App. (§1b)
-3. FTP Accounts: get/create FTP credentials. (§2a)
-4. GitHub: add the four `FTP_*` secrets. (§2b)
-5. Push anything (or use **Run workflow** in the Actions tab) to trigger the first automatic
-   deploy — confirm `hris.docsecuresd.com` picks up the dashboard fix (the `"[object Object]" is
-   not valid JSON"` toast should be gone) and that a branding logo upload now shows a real error
-   message if it still fails, instead of doing nothing.
-6. phpMyAdmin: import schema + run the clean seed (or tell me if demo data is already loaded, so
+1. FTP Accounts: get/create FTP credentials for `/home/docsyrgv/hris.docsecuresd.com`. (§2a)
+2. GitHub: add the four `FTP_*` secrets, `FTP_APP_DIR` = `/home/docsyrgv/hris.docsecuresd.com`. (§2b)
+3. Push anything (or use **Run workflow** in the Actions tab) to trigger the first automatic
+   deploy — this lays down the proper `src/` folder alongside the old flattened one, doesn't
+   delete anything yet.
+4. cPanel → Setup Node.js App → change **Application startup file** to `src/server.js` → Save →
+   Restart. (§1)
+5. Confirm: dashboard loads with no `"[object Object]" is not valid JSON` toast, profile photo
+   upload succeeds, branding logo upload succeeds (or now shows a real error instead of nothing).
+6. File Manager: delete the stale top-level `config/`, `db/`, `platform/`, `routes/`,
+   `validators/`, `server.js` under `hris.docsecuresd.com` — everything now lives under `src/`. (§1)
+7. phpMyAdmin: import schema + run the clean seed (or tell me if demo data is already loaded, so
    I can give you a safe wipe-first script instead). (§3)
