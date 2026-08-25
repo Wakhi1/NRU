@@ -96,9 +96,16 @@ app.use(`${api}`, notFoundHandler);
 // decrypted-on-read and must be registered BEFORE the general public static mount below, or
 // express.static would already have answered the request with raw (possibly encrypted) bytes.
 // Deliberately no requireAuth here — same public-before-login reasoning as branding.routes.js.
-app.use('/img', serveEncryptedDir(path.join(__dirname, '..', 'public', 'img')));
+// Reads from private/img (uploaded/encrypted files — see branding.routes.js's IMG_DIR comment);
+// serveEncryptedDir calls next() on a miss, so a request for the bundled default logo (which
+// lives unencrypted in public/img, not private/img) falls through correctly to express.static
+// below.
+app.use('/img', serveEncryptedDir(path.join(__dirname, '..', 'private', 'img')));
 app.use(express.static(path.join(__dirname, '..', 'public')));
-app.use('/uploads', requireAuth, serveEncryptedDir(path.join(__dirname, '..', 'uploads')));
+// Reads from private/uploads, not a folder literally named "uploads" — see UPLOAD_DIR's comment
+// in people.routes.js for why (Apache/LiteSpeed+Passenger will serve a same-path real file
+// directly, skipping this requireAuth check and the decryption both).
+app.use('/uploads', requireAuth, serveEncryptedDir(path.join(__dirname, '..', 'private', 'uploads')));
 
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();

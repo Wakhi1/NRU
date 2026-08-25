@@ -53,6 +53,30 @@ flattened layout.** Section 2's automated deploy does this correctly on its own 
 If `uploads/` doesn't already exist as a sibling of `public/` once `src/` is restored, create it
 with `755` permissions — it should already be there per your screenshot, so likely nothing to do.
 
+### 1c. Encrypted uploads now live in a new `private/` folder — re-upload after deploying
+
+A second, deeper bug was found after fixing the `src/` flattening: uploaded logo/favicon files
+were writing successfully but rendering as **broken images** everywhere, including the raw file
+in File Manager. Root cause: on Apache/LiteSpeed+Passenger hosting, if a real file exists at the
+exact path a URL maps to, the webserver serves it directly and never asks Node to handle the
+request. Uploaded files lived at `public/img/<filename>`, which is *exactly* the path their own
+URL (`/img/<filename>`) maps to — so the webserver always won the race, serving the raw encrypted
+bytes straight from disk instead of asking Node to decrypt them first. The same problem affects
+profile photo uploads in `uploads/` too (and there it's worse — it also skips the login check).
+
+Fixed by moving where encrypted files are *written* to a new `private/` folder (`private/img/`,
+`private/uploads/`) whose path never matches any URL the app serves — so there's never a real
+file for the webserver to shortcut to, and every request is forced through Node's decrypt step.
+The public URLs themselves (`/img/<filename>`, `/uploads/<filename>`) are unchanged. Node creates
+these folders itself on startup; nothing to create manually in File Manager. A `private/.htaccess`
+denies direct web access to the folder too, as a second layer of protection.
+
+**This means anything uploaded before this fix is stranded at the old location** and will still
+404 or look broken if referenced — after deploying this fix, just re-upload the branding logo,
+favicon, and any profile photos once more; the fresh uploads go to the new location and work
+correctly. The old orphaned files in `public/img/branding-*` and `uploads/*` are harmless and can
+be deleted from File Manager whenever convenient, no rush.
+
 ### Application root, for reference
 
 - **Application root**: `/home/docsyrgv/hris.docsecuresd.com`

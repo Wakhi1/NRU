@@ -12,7 +12,15 @@ const enc = require('../platform/crypto');
 
 const router = express.Router();
 
-const IMG_DIR = path.join(__dirname, '..', '..', 'public', 'img');
+// Uploaded (encrypted) logo/favicon files live OUTSIDE public/ on purpose — see the matching
+// comment on UPLOAD_DIR in people.routes.js. A file at public/img/<name> sits at the exact path
+// its own URL (/img/<name>) maps to, so Apache/LiteSpeed+Passenger serves it directly from disk
+// and never gives Node a chance to decrypt it (confirmed in production — uploads "succeeded" but
+// rendered as broken images, because the browser was receiving raw ciphertext). The bundled
+// default logo (nru-logo.png) deliberately stays in public/img — it's not encrypted or sensitive,
+// so serving it as a fast static file is fine; only uploads go into IMG_DIR.
+const IMG_DIR = path.join(__dirname, '..', '..', 'private', 'img');
+fs.mkdirSync(IMG_DIR, { recursive: true });
 const DEFAULT_LOGO = '/img/nru-logo.png';
 
 // memoryStorage — an uploaded logo/favicon is encrypted (encryptBuffer) and written by the route

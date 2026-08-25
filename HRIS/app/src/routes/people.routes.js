@@ -34,7 +34,14 @@ const SELF_EDITABLE_FIELDS = [
   'languages', 'marital_status',
 ];
 
-const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads');
+// Deliberately NOT a folder named "uploads" that sits at a path matching its own URL
+// (`/uploads/<file>`) — on Apache/LiteSpeed+Passenger hosting, a real on-disk file at the exact
+// requested path gets served directly by the webserver, bypassing both Node's requireAuth check
+// and its decrypt-on-read step entirely (confirmed in production: encrypted files were coming
+// back as raw ciphertext). `private/` never matches any URL the app actually serves, so there's
+// never a real file for the webserver to shortcut to — every request is forced through Node.
+const UPLOAD_DIR = path.join(__dirname, '..', '..', 'private', 'uploads');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 // memoryStorage (not diskStorage) so the raw photo is never written to disk in plaintext, even
 // momentarily — the route handler below encrypts req.file.buffer and writes the ciphertext
 // directly. Read back out via platform/fileServe.js, which decrypts on the way to a response.

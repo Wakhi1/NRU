@@ -34,6 +34,12 @@ function migrateDir(dir, { onlyPrefix } = {}) {
 }
 
 (async () => {
+  // private/uploads and private/img (not uploads/ or public/img) — see UPLOAD_DIR's comment in
+  // people.routes.js for why user-uploaded files live outside any folder whose path matches its
+  // own serving URL. Also sweeps the old uploads/ and public/img/branding-* locations in case
+  // this runs against a server that hasn't had its files migrated to the new folders yet.
+  migrateDir(path.join(__dirname, '..', '..', 'private', 'uploads'));
+  migrateDir(path.join(__dirname, '..', '..', 'private', 'img'), { onlyPrefix: 'branding-' });
   migrateDir(path.join(__dirname, '..', '..', 'uploads'));
   migrateDir(path.join(__dirname, '..', '..', 'public', 'img'), { onlyPrefix: 'branding-' });
   console.log('Done.');
