@@ -1,0 +1,12 @@
+---
+# Read by cPanel's Git Version Control feature when you click "Deploy HEAD Commit" on this
+# repo (Manage page for the repo). This repo is a monorepo (ACCOUNTING/HRIS/SPTS at the root),
+# so deployment copies only HRIS/app into the real Node application directory.
+#
+# EDIT DEPLOYPATH below to match your cPanel "Setup Node.js App" Application root before using
+# this — see DEPLOYMENT.md at the repo root for the full walkthrough.
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/USERNAME/nodeapp/
+    - /bin/cp -R HRIS/app/* $DEPLOYPATH
+    - /bin/touch $DEPLOYPATH/tmp/restart.txt

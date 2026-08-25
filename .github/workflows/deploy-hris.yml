@@ -1,0 +1,52 @@
+name: Deploy HRIS to production (FTP)
+
+# Pushes HRIS/app straight to the cPanel-hosted Node app over FTP whenever main changes under
+# that folder, then touches tmp/restart.txt so cPanel's Passenger process picks up the new code.
+# See DEPLOYMENT.md at the repo root for the one-time setup this depends on (GitHub secrets,
+# the uploads/ folder, etc).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'HRIS/app/**'
+  workflow_dispatch: {} # lets you trigger a redeploy manually from the Actions tab, no new commit needed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload changed files over FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./HRIS/app/
+          server-dir: ${{ secrets.FTP_APP_DIR }}/
+          # Never let this workflow touch server-only state: the real .env, the uploads/logs
+          # people have created on the live server, or a rebuilt node_modules (that ships via
+          # its own manual "Run NPM Install" in cPanel's Node app UI when package.json changes).
+          exclude: |
+            **/.env
+            **/.git*
+            **/node_modules/**
+            **/uploads/**
+            **/logs/**
+
+      - name: Write a fresh tmp/restart.txt so Passenger reloads the app
+        run: |
+          mkdir -p ./_restart-trigger/tmp
+          date -u > ./_restart-trigger/tmp/restart.txt
+
+      - name: Touch restart.txt over FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./_restart-trigger/
+          server-dir: ${{ secrets.FTP_APP_DIR }}/
