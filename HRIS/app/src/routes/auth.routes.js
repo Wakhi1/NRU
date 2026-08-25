@@ -1,12 +1,12 @@
 const express = require('express');
 const db = require('../platform/db');
-const { verifyPassword, requireAuth } = require('../platform/auth');
+const { verifyPassword, hashPassword, requireAuth } = require('../platform/auth');
 const { badRequest, unauthorized, forbidden, asyncHandler } = require('../platform/errors');
 const { resolveAllScopes } = require('../platform/scope');
 const { writeAudit } = require('../platform/audit');
 const { notify } = require('../platform/mailer');
 const { verifyTotp, generateEmailOtp, hashCode, verifyCode, LOCKOUT_DEFAULT_ATTEMPTS, LOCKOUT_DEFAULT_WINDOW_MIN } = require('../platform/mfa');
-const { loginSchema, mfaVerifySchema } = require('../validators/auth.validators');
+const { loginSchema, mfaVerifySchema, changePasswordSchema } = require('../validators/auth.validators');
 const enc = require('../platform/crypto');
 
 const router = express.Router();
@@ -181,6 +181,28 @@ router.get('/me', requireAuth, asyncHandler(async (req, res) => {
   const rows = await db.query('SELECT photo_url FROM person WHERE employee_no = ?', [req.session.user.employeeNo]);
   const user = { ...req.session.user, photoUrl: rows[0] ? rows[0].photo_url : null };
   res.json({ user, scope });
+}));
+
+// Self-service password change — the counterpart to access.routes.js's admin-triggered
+// reset-password, needed now that "migrate to user accounts" can hand someone a temp password
+// they never chose themselves. Requires the current password rather than just a session, and
+// deliberately throws badRequest (400) not unauthorized (401) on a wrong current password — see
+// the unauthorized-vs-badRequest lesson from the MFA round: 401 is reserved for missing/expired
+// sessions, not a credential-mismatch check on an already-authenticated action.
+router.post('/change-password', requireAuth, asyncHandler(async (req, res) => {
+  const parsed = changePasswordSchema.safeParse(req.body);
+  if (!parsed.success) throw badRequest('Invalid password', parsed.error.flatten());
+  const { current_password, new_password } = parsed.data;
+
+  const rows = await db.query('SELECT id, password_hash FROM app_user WHERE employee_no = ?', [req.session.user.employeeNo]);
+  const user = rows[0];
+  if (!user) throw unauthorized();
+  const ok = await verifyPassword(current_password, user.password_hash);
+  if (!ok) throw badRequest('Current password is incorrect');
+
+  await db.query('UPDATE app_user SET password_hash = ? WHERE id = ?', [await hashPassword(new_password), user.id]);
+  await writeAudit(req, 'change_password', 'app_user', req.session.user.employeeNo, null, { self_service: true });
+  res.json({ ok: true });
 }));
 
 module.exports = router;

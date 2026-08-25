@@ -39,4 +39,14 @@ const passwordResetSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
-module.exports = { permissionUpdateSchema, overrideSchema, roleSchema, userCreateSchema, userUpdateSchema, passwordResetSchema };
+// "Migrate to user accounts" bulk action on the People records page — each row just needs which
+// person and which role; the temp password is generated server-side (see auth.js's
+// generateTempPassword), not supplied by the client.
+const bulkUserCreateSchema = z.object({
+  accounts: z.array(z.object({
+    employee_no: z.string().min(3).max(20),
+    role_id: z.number().int(),
+  })).min(1).max(200),
+});
+
+module.exports = { permissionUpdateSchema, overrideSchema, roleSchema, userCreateSchema, userUpdateSchema, passwordResetSchema, bulkUserCreateSchema };

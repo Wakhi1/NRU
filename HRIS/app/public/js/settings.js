@@ -503,6 +503,11 @@ const APP_SETTING_FIELDS = [
 
     contentEl.innerHTML = `
       <div class="card">
+        <h3>Password</h3>
+        <div class="modal-note" style="margin-bottom:12px">Change your own sign-in password. If you were just given a temporary password by an administrator, do this now.</div>
+        <button class="btn btn-ghost btn-sm" id="change-password-btn">Change password</button>
+      </div>
+      <div class="card">
         <h3>Authenticator app</h3>
         <div class="modal-note" style="margin-bottom:12px">Use Google Authenticator, Microsoft Authenticator, Authy or similar. A 6-digit code from the app is required at sign-in once enabled.</div>
         <div id="totp-status"></div>
@@ -519,6 +524,27 @@ const APP_SETTING_FIELDS = [
         <button class="btn btn-ghost btn-sm" id="regen-backup-btn">Regenerate backup codes</button>
       </div>` : ''}
     `;
+
+    // -- Password --
+    document.getElementById('change-password-btn').addEventListener('click', () => {
+      FormDrawer.open({
+        title: 'Change password',
+        sub: 'You will stay signed in — only future sign-ins use the new password.',
+        sections: [{
+          label: 'Password',
+          fields: [
+            { key: 'current_password', label: 'Current password', type: 'text', value: '', required: true },
+            { key: 'new_password', label: 'New password', type: 'text', value: '', required: true, hint: 'At least 8 characters' },
+          ],
+        }],
+        primaryLabel: 'Change password',
+        onSave: async (v) => {
+          if (!v.new_password || v.new_password.length < 8) throw new Error('New password must be at least 8 characters.');
+          await Api.post('/auth/change-password', { current_password: v.current_password, new_password: v.new_password });
+          Api.toast('Password changed', 'success');
+        },
+      });
+    });
 
     // -- TOTP --
     const totpStatusEl = document.getElementById('totp-status');

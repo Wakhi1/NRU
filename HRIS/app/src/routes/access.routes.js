@@ -1,10 +1,10 @@
 const express = require('express');
 const db = require('../platform/db');
 const { asyncHandler, badRequest, notFound, conflict } = require('../platform/errors');
-const { requireRole, hashPassword } = require('../platform/auth');
+const { requireRole, hashPassword, generateTempPassword } = require('../platform/auth');
 const { MODULES } = require('../platform/scope');
 const { writeAudit } = require('../platform/audit');
-const { permissionUpdateSchema, overrideSchema, roleSchema, userCreateSchema, userUpdateSchema, passwordResetSchema } = require('../validators/access.validators');
+const { permissionUpdateSchema, overrideSchema, roleSchema, userCreateSchema, userUpdateSchema, passwordResetSchema, bulkUserCreateSchema } = require('../validators/access.validators');
 
 const router = express.Router();
 const ADMIN_ROLES = ['System administrator', 'HR administrator'];
@@ -88,6 +88,63 @@ router.get('/users', requireRole(...ADMIN_ROLES), asyncHandler(async (req, res) 
      ORDER BY p.full_legal_name`
   );
   res.json({ data: rows });
+}));
+
+// Registered before /users/:id-shaped routes below purely for readability (grouped with the
+// other literal /users/* paths) — 'candidates'/'bulk' aren't numeric so Express's :id param
+// wouldn't actually collide with them either way.
+//
+// People records' "Migrate to user accounts" button: every person who doesn't yet have a login,
+// for HR/System admin to pick roles for and provision in bulk.
+router.get('/users/candidates', requireRole(...ADMIN_ROLES), asyncHandler(async (req, res) => {
+  const rows = await db.query(
+    `SELECT p.employee_no, p.full_legal_name, p.email, p.status, e.position_title, ou.name AS department_name
+     FROM person p
+     LEFT JOIN app_user u ON u.employee_no = p.employee_no
+     LEFT JOIN employment e ON e.employee_no = p.employee_no AND e.is_current = 1
+     LEFT JOIN org_unit ou ON ou.id = e.department_org_unit_id
+     WHERE u.id IS NULL
+     ORDER BY p.full_legal_name`
+  );
+  res.json({ data: rows });
+}));
+
+// Creates a login for each {employee_no, role_id} pair with a server-generated temp password —
+// partial failure per row (missing email, already has a login, etc.) doesn't abort the rest of
+// the batch; the frontend shows a results table so the admin sees exactly what succeeded and can
+// hand out the generated passwords (returned once here, never stored in plaintext).
+router.post('/users/bulk', requireRole(...ADMIN_ROLES), asyncHandler(async (req, res) => {
+  const parsed = bulkUserCreateSchema.safeParse(req.body);
+  if (!parsed.success) throw badRequest('Invalid account list', parsed.error.flatten());
+
+  const results = [];
+  for (const acct of parsed.data.accounts) {
+    try {
+      const person = await db.query('SELECT employee_no, full_legal_name, email FROM person WHERE employee_no = ?', [acct.employee_no]);
+      if (!person[0]) { results.push({ employee_no: acct.employee_no, ok: false, error: 'Person not found' }); continue; }
+      if (!person[0].email) { results.push({ employee_no: acct.employee_no, full_legal_name: person[0].full_legal_name, ok: false, error: 'No email on file — add one to the person record first' }); continue; }
+      const role = await db.query('SELECT id FROM role WHERE id = ?', [acct.role_id]);
+      if (!role[0]) { results.push({ employee_no: acct.employee_no, full_legal_name: person[0].full_legal_name, ok: false, error: 'Unknown role' }); continue; }
+
+      const tempPassword = generateTempPassword();
+      let insertId;
+      try {
+        const result = await db.query(
+          'INSERT INTO app_user (employee_no, email, password_hash, role_id, is_active) VALUES (?, ?, ?, ?, 1)',
+          [acct.employee_no, person[0].email, await hashPassword(tempPassword), acct.role_id]
+        );
+        insertId = result.insertId;
+      } catch (err) {
+        if (err.errno === ER_DUP_ENTRY) { results.push({ employee_no: acct.employee_no, full_legal_name: person[0].full_legal_name, ok: false, error: 'This person or email already has a login' }); continue; }
+        throw err;
+      }
+      await writeAudit(req, 'create', 'app_user', insertId, null, { employee_no: acct.employee_no, email: person[0].email, role_id: acct.role_id, via: 'bulk_migration' });
+      results.push({ employee_no: acct.employee_no, full_legal_name: person[0].full_legal_name, ok: true, email: person[0].email, password: tempPassword });
+    } catch (err) {
+      results.push({ employee_no: acct.employee_no, ok: false, error: 'Unexpected error creating this login' });
+    }
+  }
+  res.status(201).json({ data: results });
 }));
 
 router.post('/users', requireRole(...ADMIN_ROLES), asyncHandler(async (req, res) => {

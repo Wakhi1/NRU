@@ -14,6 +14,11 @@
             "date": 1787523478437,
             "name": "C:\\NRU\\HRIS\\app\\logs\\combined-2026-08-24.log",
             "hash": "24d27b7514446ba130db8cfcbebdf1f7761433c68d5e9585aa4253f202c66f55"
+        },
+        {
+            "date": 1787678829311,
+            "name": "C:\\NRU\\HRIS\\app\\logs\\combined-2026-08-25.log",
+            "hash": "9bdd1d12b2aa7f0e91e0a6c47fac751ba2db557fcb825b129e04795d83b2c98f"
         }
     ],
     "hashType": "sha256"

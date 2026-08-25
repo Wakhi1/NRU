@@ -1,9 +1,21 @@
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const db = require('./db');
 const { unauthorized, forbidden, asyncHandler } = require('./errors');
 
 const hashPassword = (plain) => bcrypt.hash(plain, 10);
 const verifyPassword = (plain, hash) => bcrypt.compare(plain, hash);
+
+// Temporary password for admin-provisioned accounts (bulk "migrate to user accounts" from People
+// records) — shown once in the response, never persisted in plaintext. Same unambiguous-alphabet
+// approach as mfa.js's backup codes, just longer and without dashes since it's a real password
+// meant to be typed at a login form, not read aloud.
+const TEMP_PASSWORD_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+function generateTempPassword(length = 12) {
+  let out = '';
+  for (let i = 0; i < length; i++) out += TEMP_PASSWORD_ALPHABET[crypto.randomInt(0, TEMP_PASSWORD_ALPHABET.length)];
+  return out;
+}
 
 // Re-checks is_active/locked_until against the DB on every request (not just at login) so an
 // admin's manual lock or suspend takes effect immediately on an already-open session, instead
@@ -30,4 +42,4 @@ function requireRole(...roles) {
   };
 }
 
-module.exports = { hashPassword, verifyPassword, requireAuth, requireRole };
+module.exports = { hashPassword, verifyPassword, requireAuth, requireRole, generateTempPassword };
