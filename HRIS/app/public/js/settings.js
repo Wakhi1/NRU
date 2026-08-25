@@ -415,9 +415,11 @@ const APP_SETTING_FIELDS = [
     document.getElementById('org-name-save').addEventListener('click', async (e) => {
       const value = document.getElementById('org-name-input').value.trim();
       if (!value) return Api.toast('Organisation name cannot be empty', 'error');
-      await Api.withLoading(e.currentTarget, 'Saving…', () => Api.put('/settings/app', { settings: { org_name: value } }));
-      Api.toast('Organisation name saved', 'success');
-      renderBranding();
+      try {
+        await Api.withLoading(e.currentTarget, 'Saving…', () => Api.put('/settings/app', { settings: { org_name: value } }));
+        Api.toast('Organisation name saved', 'success');
+        renderBranding();
+      } catch (err) { Api.toast(err.message, 'error'); }
     });
 
     document.getElementById('empno-save').addEventListener('click', async (e) => {
@@ -425,30 +427,45 @@ const APP_SETTING_FIELDS = [
       const padding = document.getElementById('empno-padding-input').value.trim();
       if (!prefix) return Api.toast('Employee number prefix cannot be empty', 'error');
       if (!padding || !/^\d+$/.test(padding)) return Api.toast('Employee number digits must be a whole number', 'error');
-      await Api.withLoading(e.currentTarget, 'Saving…', () =>
-        Api.put('/settings/app', { settings: { employee_no_prefix: prefix, employee_no_padding: padding } }));
-      Api.toast('Employee numbering saved', 'success');
-      renderBranding();
+      try {
+        await Api.withLoading(e.currentTarget, 'Saving…', () =>
+          Api.put('/settings/app', { settings: { employee_no_prefix: prefix, employee_no_padding: padding } }));
+        Api.toast('Employee numbering saved', 'success');
+        renderBranding();
+      } catch (err) { Api.toast(err.message, 'error'); }
     });
 
+    // NOTE: these two use raw fetch (not Api.request) because the body is FormData, not JSON —
+    // so, unlike every other action on this page, errors here are NOT auto-toasted by api.js and
+    // MUST be caught and surfaced here explicitly. Previously this had no try/catch at all: a
+    // failed upload (wrong role, oversized file, server error) threw inside the async handler,
+    // which just became a silent unhandled promise rejection — no toast, no visible error, button
+    // simply stopped spinning as if nothing happened.
     document.getElementById('logo-upload-btn').addEventListener('click', async (e) => {
       const file = document.getElementById('logo-file').files[0];
       if (!file) { Api.toast('Choose a file first', 'error'); return; }
       const form = new FormData();
       form.append('logo', file);
-      await Api.withLoading(e.currentTarget, 'Uploading…', async () => {
-        const res = await fetch('/api/v1/branding/logo', { method: 'POST', body: form, credentials: 'same-origin' });
-        if (!res.ok) throw new Error((await res.json()).error || 'Upload failed');
-      });
-      Api.toast('Logo updated', 'success');
-      renderBranding();
+      try {
+        await Api.withLoading(e.currentTarget, 'Uploading…', async () => {
+          const res = await fetch('/api/v1/branding/logo', { method: 'POST', body: form, credentials: 'same-origin' });
+          if (!res.ok) {
+            const payload = await res.json().catch(() => null);
+            throw new Error((payload && payload.error) || `Upload failed (${res.status})`);
+          }
+        });
+        Api.toast('Logo updated', 'success');
+        renderBranding();
+      } catch (err) { Api.toast(err.message, 'error'); }
     });
 
     const resetLogoBtn = document.getElementById('logo-reset-btn');
     if (resetLogoBtn) resetLogoBtn.addEventListener('click', async (e) => {
-      await Api.withLoading(e.currentTarget, 'Resetting…', () => Api.del('/branding/logo'));
-      Api.toast('Logo reset to default', 'success');
-      renderBranding();
+      try {
+        await Api.withLoading(e.currentTarget, 'Resetting…', () => Api.del('/branding/logo'));
+        Api.toast('Logo reset to default', 'success');
+        renderBranding();
+      } catch (err) { Api.toast(err.message, 'error'); }
     });
 
     document.getElementById('favicon-upload-btn').addEventListener('click', async (e) => {
@@ -456,19 +473,26 @@ const APP_SETTING_FIELDS = [
       if (!file) { Api.toast('Choose a file first', 'error'); return; }
       const form = new FormData();
       form.append('favicon', file);
-      await Api.withLoading(e.currentTarget, 'Uploading…', async () => {
-        const res = await fetch('/api/v1/branding/favicon', { method: 'POST', body: form, credentials: 'same-origin' });
-        if (!res.ok) throw new Error((await res.json()).error || 'Upload failed');
-      });
-      Api.toast('Favicon updated', 'success');
-      renderBranding();
+      try {
+        await Api.withLoading(e.currentTarget, 'Uploading…', async () => {
+          const res = await fetch('/api/v1/branding/favicon', { method: 'POST', body: form, credentials: 'same-origin' });
+          if (!res.ok) {
+            const payload = await res.json().catch(() => null);
+            throw new Error((payload && payload.error) || `Upload failed (${res.status})`);
+          }
+        });
+        Api.toast('Favicon updated', 'success');
+        renderBranding();
+      } catch (err) { Api.toast(err.message, 'error'); }
     });
 
     const resetFaviconBtn = document.getElementById('favicon-reset-btn');
     if (resetFaviconBtn) resetFaviconBtn.addEventListener('click', async (e) => {
-      await Api.withLoading(e.currentTarget, 'Removing…', () => Api.del('/branding/favicon'));
-      Api.toast('Favicon removed', 'success');
-      renderBranding();
+      try {
+        await Api.withLoading(e.currentTarget, 'Removing…', () => Api.del('/branding/favicon'));
+        Api.toast('Favicon removed', 'success');
+        renderBranding();
+      } catch (err) { Api.toast(err.message, 'error'); }
     });
   }
 

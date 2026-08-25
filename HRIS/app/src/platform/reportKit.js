@@ -17,6 +17,10 @@ function fmtCell(value, col) {
   if (col && col.type === 'currency') return Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (col && col.type === 'number') return Number(value).toLocaleString();
   if (col && col.type === 'date' && value) return String(value).slice(0, 10);
+  // A JSON-typed MySQL column (before_json/after_json in the audit export) comes back already
+  // parsed into an object on real MySQL, but as a string on MariaDB — String(obj) would render
+  // "[object Object]" only in the former case, so stringify objects/arrays explicitly.
+  if (typeof value === 'object') return JSON.stringify(value);
   return String(value);
 }
 

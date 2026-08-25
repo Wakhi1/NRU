@@ -37,4 +37,19 @@ async function tx(work) {
   }
 }
 
-module.exports = { pool, query, tx };
+// Real MySQL auto-parses native JSON-typed columns into JS objects/arrays, but MariaDB (e.g.
+// XAMPP's default) stores JSON as plain TEXT under the hood and mysql2 returns it as a raw
+// string — so code that does JSON.parse(row.some_json_col) works in dev (MariaDB) and throws
+// `"[object Object]" is not valid JSON` in production (real MySQL) the moment a value is already
+// an object. Always read a JSON column through this instead of calling JSON.parse directly.
+function parseJsonColumn(value, fallback = null) {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'object') return value;
+  try {
+    return JSON.parse(value);
+  } catch (e) {
+    return fallback;
+  }
+}
+
+module.exports = { pool, query, tx, parseJsonColumn };

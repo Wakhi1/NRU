@@ -685,7 +685,7 @@ router.get('/saved', requireScope('reports', 'read'), asyncHandler(async (req, r
   );
   res.json({
     data: rows.map((r) => ({
-      id: r.id, name: r.name, reportIds: JSON.parse(r.report_ids_json), filters: JSON.parse(r.filters_json),
+      id: r.id, name: r.name, reportIds: db.parseJsonColumn(r.report_ids_json, []), filters: db.parseJsonColumn(r.filters_json, {}),
       createdBy: r.created_by, createdAt: r.created_at,
     })),
   });

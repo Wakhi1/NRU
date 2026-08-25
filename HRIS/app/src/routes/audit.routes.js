@@ -104,8 +104,8 @@ router.get('/:id', asyncHandler(async (req, res) => {
   res.json({
     data: {
       ...row,
-      before: row.before_json ? JSON.parse(row.before_json) : null,
-      after: row.after_json ? JSON.parse(row.after_json) : null,
+      before: db.parseJsonColumn(row.before_json),
+      after: db.parseJsonColumn(row.after_json),
     },
   });
 }));
