@@ -72,6 +72,24 @@ CREATE TABLE IF NOT EXISTS mfa_backup_code (
 
 CREATE INDEX idx_backup_user ON mfa_backup_code(app_user_id, used_at);
 
+-- Email-OTP challenges issued THROUGH THE INTEGRATION API (POST /integration/employees/:no/mfa/send-email-code)
+-- on behalf of another system in the ecosystem (e.g. SPTS) — deliberately separate from the
+-- browser-login pendingMfa object in auth.routes.js, which lives only in an HRIS session and
+-- isn't reachable by a server-to-server caller. This is HRIS acting as the ecosystem's MFA
+-- authority: the code is generated and emailed by HRIS, but a DIFFERENT system verifies its own
+-- login attempt against it via POST /integration/employees/:no/mfa/verify, without HRIS ever
+-- handing over the raw TOTP secret or a long-lived credential.
+CREATE TABLE IF NOT EXISTS mfa_challenge (
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  employee_no  VARCHAR(20) NOT NULL,
+  code_hash    VARCHAR(255) NOT NULL,
+  consumed_at  DATETIME NULL,
+  expires_at   DATETIME NOT NULL,
+  created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_mfachallenge_person FOREIGN KEY (employee_no) REFERENCES person(employee_no) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE INDEX idx_mfachallenge_employee ON mfa_challenge(employee_no, consumed_at);
+
 CREATE TABLE IF NOT EXISTS permission (
   role_id     INT NOT NULL,
   module      VARCHAR(30) NOT NULL,

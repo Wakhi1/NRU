@@ -4,6 +4,27 @@ function fmtDate(s) { return s ? new Date(s).toLocaleString('en-GB', { day: 'num
 const ACTIONS = ['create', 'read', 'update', 'delete'];
 const ACTION_LABEL = { create: 'C', read: 'R', update: 'U', delete: 'D' };
 
+// Starting points for the three named systems docs/INTEGRATION.md already describes — a preset
+// only pre-checks the matrix, it never restricts what an admin can still change by hand
+// afterwards. Added after a real incident: a live SPTS key was missing `identity:create` because
+// it was granted before that scope existed, and there was no easy way to see "here's the full set
+// this kind of system actually needs" in one click.
+const PRESETS = {
+  spts: {
+    label: 'Smart Phone Tracking (SPTS)',
+    scopes: ['employees:read', 'devices:read', 'timesheets:create', 'timesheets:read', 'timesheets:update',
+      'org:read', 'audit:create', 'mfa:read', 'mfa:create', 'identity:create'],
+  },
+  accounting: {
+    label: 'Accounting',
+    scopes: ['employees:read', 'timesheets:read', 'org:read', 'payroll:read', 'payroll:update'],
+  },
+  fleet: {
+    label: 'Fleet / logistics',
+    scopes: ['employees:read', 'timesheets:read', 'leave:read', 'certifications:read', 'org:read'],
+  },
+};
+
 (async () => {
   await Shell.init('integration');
 
@@ -14,7 +35,10 @@ const ACTION_LABEL = { create: 'C', read: 'R', update: 'U', delete: 'D' };
 
   // Renders the CRUD grid — rows = categories, columns = C/R/U/D, a checkbox only where this
   // category's schema marks that action allowed, a plain dash otherwise (same convention the
-  // internal permission matrix in Settings uses for "not applicable" cells).
+  // internal permission matrix in Settings uses for "not applicable" cells). The preset row above
+  // it pre-checks a known system's full recommended matrix in one click (docs/INTEGRATION.md's
+  // "Suggested access per named system" table) — a starting point, not a restriction; every box
+  // stays individually editable afterwards.
   function matrixHtml(checkedScopes) {
     const checked = new Set(checkedScopes || []);
     const rows = matrixSchema.map((cat) => `
@@ -27,6 +51,13 @@ const ACTION_LABEL = { create: 'C', read: 'R', update: 'U', delete: 'D' };
       </tr>`).join('');
     return `
       <div class="drawer-group">
+        <div class="drawer-group-label">Presets</div>
+        <div class="field-hint" style="margin-bottom:8px">Pre-checks a known system's recommended access below — still fully editable after.</div>
+        <div class="row" style="gap:6px;flex-wrap:wrap">
+          ${Object.entries(PRESETS).map(([key, p]) => `<button type="button" class="btn btn-ghost btn-sm" data-preset="${key}">${esc(p.label)}</button>`).join('')}
+        </div>
+      </div>
+      <div class="drawer-group">
         <div class="drawer-group-label">Access matrix</div>
         <div class="table-wrap">
           <table>
@@ -35,6 +66,15 @@ const ACTION_LABEL = { create: 'C', read: 'R', update: 'U', delete: 'D' };
           </table>
         </div>
       </div>`;
+  }
+  function applyPreset(root, presetKey) {
+    const scopes = new Set(PRESETS[presetKey].scopes);
+    root.querySelectorAll('[data-scope]').forEach((el) => { el.checked = scopes.has(el.dataset.scope); });
+  }
+  function wirePresets(root) {
+    root.querySelectorAll('[data-preset]').forEach((btn) => {
+      btn.addEventListener('click', () => applyPreset(root, btn.dataset.preset));
+    });
   }
   function collectMatrixScopes(root) {
     return Array.from(root.querySelectorAll('[data-scope]'))
@@ -131,7 +171,7 @@ const ACTION_LABEL = { create: 'C', read: 'R', update: 'U', delete: 'D' };
           sub: 'Changes what this key can do without rotating its secret — anything already using it keeps working, just with updated access.',
           sections: [],
           extraHtml: matrixHtml(currentScopes),
-          afterRender: (root) => { drawerRoot = root; },
+          afterRender: (root) => { drawerRoot = root; wirePresets(root); },
           primaryLabel: 'Save access',
           onSave: async () => {
             const scopes = collectMatrixScopes(drawerRoot);
@@ -186,7 +226,7 @@ const ACTION_LABEL = { create: 'C', read: 'R', update: 'U', delete: 'D' };
         ],
       }],
       extraHtml: matrixHtml([]),
-      afterRender: (root) => { drawerRoot = root; },
+      afterRender: (root) => { drawerRoot = root; wirePresets(root); },
       primaryLabel: 'Create key',
       onSave: async (v) => {
         const scopes = collectMatrixScopes(drawerRoot);

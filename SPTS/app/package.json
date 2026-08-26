@@ -1,0 +1,28 @@
+{
+  "name": "spts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NRU Smart Phone Tracking & Data Collection Monitoring — geofenced shift check-in and live/history tracking, integrated with the HRIS as the system of record for people.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "migrate": "node src/db/migrate.js",
+    "seed": "node src/db/seed.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "helmet": "^7.1.0",
+    "leaflet": "^1.9.4",
+    "multer": "^1.4.5-lts.1",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.10.0",
+    "node-cron": "^3.0.3",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}

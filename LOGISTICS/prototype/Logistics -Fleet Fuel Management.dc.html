@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%}
+body{font-family:Roboto,Helvetica,Arial,sans-serif;background:#EEF1F4;color:#16202A;-webkit-font-smoothing:antialiased}
+a{color:#0F4C81;text-decoration:none}
+a:hover{color:#0A3559;text-decoration:underline}
+input,select,textarea,button{font-family:inherit;font-size:inherit;color:inherit;border-radius:0}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#C3CAD1}
+::-webkit-scrollbar-track{background:#E4E8EC}
+@keyframes ripple{from{opacity:.5;transform:scale(.4)}to{opacity:0;transform:scale(1)}}
+@keyframes slideup{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes pulse{0%{opacity:1}50%{opacity:.35}100%{opacity:1}}
+</style>
+</helmet>
+
+<div style="height:100vh;display:flex;flex-direction:column;overflow:hidden;background:#EEF1F4">
+
+  <header style="flex:none;height:56px;background:#0F4C81;color:#fff;display:flex;align-items:center;gap:4px;padding:0 8px;box-shadow:0 2px 4px rgba(0,0,0,.25);z-index:30">
+    <button onClick="{{ toggleNav }}" title="Menu" style="width:44px;height:44px;border:0;background:transparent;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Outlined';font-size:22px;font-feature-settings:'liga'">menu</span></button>
+    <div style="display:flex;align-items:baseline;gap:10px;min-width:0">
+      <span style="font-size:17px;font-weight:500;letter-spacing:.3px;white-space:nowrap">NRU Fleet &amp; Fuel</span>
+      <span style="font-size:12px;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ screenTitle }}</span>
+    </div>
+    <div style="flex:1"></div>
+    <div style="display:flex;align-items:center;background:rgba(255,255,255,.14);height:36px;padding:0 10px;gap:8px;max-width:280px;flex:1 1 120px">
+      <span style="font-family:'Material Symbols Outlined';font-size:19px;font-feature-settings:'liga';opacity:.85">search</span>
+      <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Search fleet, trips, fuel" style="flex:1;min-width:0;background:transparent;border:0;outline:0;color:#fff;font-size:13.5px" />
+    </div>
+    <button onClick="{{ openAlerts }}" title="Alerts" style="width:44px;height:44px;border:0;background:transparent;color:#fff;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center">
+      <span style="font-family:'Material Symbols Outlined';font-size:22px;font-feature-settings:'liga'">notifications</span>
+      <span style="position:absolute;top:8px;right:8px;min-width:16px;height:16px;background:#FF6D00;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px">{{ alertCount }}</span>
+    </button>
+    <div style="width:32px;height:32px;background:#FF6D00;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-left:4px">TD</div>
+  </header>
+
+  <div style="flex:1;display:flex;min-height:0;position:relative">
+
+    <nav style="flex:none;width:{{ navWidth }};background:#12395C;color:#CFDCE8;overflow-y:auto;overflow-x:hidden;transition:width .18s;position:{{ navPos }};top:0;bottom:0;left:0;z-index:25;box-shadow:{{ navShadow }}">
+      <sc-for list="{{ menu }}" as="m" hint-placeholder-count="9">
+        <div onClick="{{ m.go }}" title="{{ m.label }}" style="display:flex;align-items:center;gap:14px;height:46px;padding:0 16px;cursor:pointer;background:{{ m.bg }};color:{{ m.fg }};border-left:3px solid {{ m.bar }};white-space:nowrap" style-hover="background:#1B4B74;color:#fff">
+          <span style="font-family:'Material Symbols Outlined';font-size:21px;font-feature-settings:'liga';flex:none">{{ m.icon }}</span>
+          <span style="font-size:13.5px;font-weight:500;opacity:{{ m.textOp }}">{{ m.label }}</span>
+          <span style="flex:1"></span>
+          <sc-if value="{{ m.badge }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;font-weight:700;background:#FF6D00;color:#fff;padding:2px 5px">{{ m.badge }}</span></sc-if>
+        </div>
+      </sc-for>
+      <div style="padding:18px 16px;border-top:1px solid rgba(255,255,255,.1);margin-top:8px;font-size:11px;line-height:1.7;color:#7E9CB8;white-space:nowrap">
+        <div style="font-weight:700;color:#A9C3D8">NRU IT DEPARTMENT</div>
+        <div>Build 2.4.1 · Flutter/Material</div>
+        <div>Synced {{ syncedAt }}</div>
+      </div>
+    </nav>
+
+    <sc-if value="{{ scrimOn }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ toggleNav }}" style="position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:24"></div>
+    </sc-if>
+
+    <main style="flex:1;min-width:0;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px">
+
+      <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+            <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+              <div style="background:#fff;border-top:3px solid {{ k.color }};box-shadow:0 1px 3px rgba(0,0,0,.16);padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;align-items:center;gap:8px;color:#5F6B76">
+                  <span style="font-family:'Material Symbols Outlined';font-size:19px;font-feature-settings:'liga';color:{{ k.color }}">{{ k.icon }}</span>
+                  <span style="font-size:11.5px;font-weight:500;letter-spacing:.6px;text-transform:uppercase">{{ k.label }}</span>
+                </div>
+                <div style="font-family:'Roboto Mono',monospace;font-size:26px;font-weight:500;line-height:1.1">{{ k.value }}</div>
+                <div style="font-size:11.5px;color:{{ k.deltaColor }};font-weight:500">{{ k.delta }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start">
+            <div style="background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16)">
+              <div style="padding:14px 16px;border-bottom:1px solid #E3E8ED;display:flex;align-items:center;gap:10px">
+                <span style="font-size:14px;font-weight:500">Fuel spend vs. distance</span>
+                <span style="flex:1"></span>
+                <span style="font-size:11px;color:#5F6B76">Last 8 months · Lilangeni</span>
+              </div>
+              <div style="padding:18px 16px 10px">
+                <div style="display:flex;align-items:flex-end;gap:10px;height:170px">
+                  <sc-for list="{{ chart }}" as="c" hint-placeholder-count="8">
+                    <div onClick="{{ c.pick }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;height:100%;justify-content:flex-end">
+                      <span style="font-family:'Roboto Mono',monospace;font-size:10.5px;color:#5F6B76">{{ c.label2 }}</span>
+                      <div style="width:100%;display:flex;align-items:flex-end;gap:2px;height:{{ c.h }}">
+                        <div style="flex:1;height:100%;background:{{ c.bg }}"></div>
+                        <div style="flex:1;height:{{ c.h2 }};background:#9DC3E0"></div>
+                      </div>
+                      <span style="font-size:11px;color:#5F6B76">{{ c.label }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="display:flex;gap:18px;padding:12px 2px 0;font-size:11.5px;color:#5F6B76">
+                  <span style="display:flex;align-items:center;gap:6px"><span style="width:11px;height:11px;background:#0F4C81;display:inline-block"></span>Fuel cost (E'000)</span>
+                  <span style="display:flex;align-items:center;gap:6px"><span style="width:11px;height:11px;background:#9DC3E0;display:inline-block"></span>Distance ('000 km)</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16)">
+              <div style="padding:14px 16px;border-bottom:1px solid #E3E8ED;font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px">
+                <span style="font-family:'Material Symbols Outlined';font-size:19px;font-feature-settings:'liga';color:#C62828">warning</span>Exceptions requiring action
+              </div>
+              <sc-for list="{{ alerts }}" as="a" hint-placeholder-count="4">
+                <div style="padding:12px 16px;border-bottom:1px solid #EEF1F4;display:flex;gap:12px;align-items:flex-start">
+                  <span style="width:4px;align-self:stretch;background:{{ a.color }};flex:none"></span>
+                  <div onClick="{{ a.open }}" style="flex:1;min-width:0;cursor:pointer">
+                    <div style="font-size:13px;font-weight:500">{{ a.title }}</div>
+                    <div style="font-size:12px;color:#5F6B76;line-height:1.45">{{ a.body }}</div>
+                  </div>
+                  <button onClick="{{ a.act }}" style="border:1px solid #0F4C81;background:#fff;color:#0F4C81;font-size:11.5px;font-weight:500;padding:6px 10px;cursor:pointer;text-transform:uppercase;letter-spacing:.4px" style-hover="background:#E8F0F7">{{ a.cta }}</button>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16)">
+            <div style="padding:14px 16px;border-bottom:1px solid #E3E8ED;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-size:14px;font-weight:500">Fleet efficiency league</span>
+              <span style="flex:1"></span>
+              <button onClick="{{ goFleet }}" style="border:0;background:transparent;color:#0F4C81;font-size:12px;font-weight:500;cursor:pointer;text-transform:uppercase;letter-spacing:.5px">Open fleet register</button>
+            </div>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;min-width:620px">
+                <thead><tr style="background:#F5F7F9">
+                  <th style="text-align:left;padding:10px 16px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">Vehicle</th>
+                  <th style="text-align:left;padding:10px 16px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">Assigned driver</th>
+                  <th style="text-align:right;padding:10px 16px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">L/100km</th>
+                  <th style="text-align:right;padding:10px 16px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">vs. target</th>
+                  <th style="text-align:left;padding:10px 16px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500;width:34%">Consumption band</th>
+                </tr></thead>
+                <tbody>
+                  <sc-for list="{{ league }}" as="v" hint-placeholder-count="6">
+                    <tr onClick="{{ v.open }}" style="border-bottom:1px solid #EEF1F4;cursor:pointer" style-hover="background:#F5F9FC">
+                      <td style="padding:11px 16px;font-size:13px"><span style="font-family:'Roboto Mono',monospace;font-weight:500">{{ v.reg }}</span> <span style="color:#5F6B76">· {{ v.model }}</span></td>
+                      <td style="padding:11px 16px;font-size:13px">{{ v.driver }}</td>
+                      <td style="padding:11px 16px;font-size:13px;text-align:right;font-family:'Roboto Mono',monospace">{{ v.eff }}</td>
+                      <td style="padding:11px 16px;font-size:12.5px;text-align:right;font-weight:500;color:{{ v.varColor }}">{{ v.variance }}</td>
+                      <td style="padding:11px 16px"><div style="height:8px;background:#E4E8EC"><div style="height:8px;width:{{ v.barW }};background:{{ v.varColor }}"></div></div></td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isFleet }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <sc-for list="{{ statusFilters }}" as="f" hint-placeholder-count="4">
+              <button onClick="{{ f.pick }}" style="border:1px solid {{ f.bd }};background:{{ f.bg }};color:{{ f.fg }};font-size:12.5px;padding:7px 14px;cursor:pointer;font-weight:500">{{ f.label }}</button>
+            </sc-for>
+            <span style="flex:1"></span>
+            <button onClick="{{ openVehicleDlg }}" style="border:0;background:#FF6D00;color:#fff;font-size:12.5px;font-weight:500;padding:10px 16px;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;box-shadow:0 2px 4px rgba(0,0,0,.24);display:flex;align-items:center;gap:6px">
+              <span style="font-family:'Material Symbols Outlined';font-size:18px;font-feature-settings:'liga'">add</span>Register vehicle</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px">
+            <sc-for list="{{ fleetCards }}" as="v" hint-placeholder-count="6">
+              <div onClick="{{ v.open }}" style="background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16);cursor:pointer;border-left:4px solid {{ v.statusColor }}" style-hover="box-shadow:0 4px 10px rgba(0,0,0,.22)">
+                <div style="padding:12px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #EEF1F4">
+                  <span style="font-family:'Material Symbols Outlined';font-size:24px;font-feature-settings:'liga';color:#0F4C81">{{ v.icon }}</span>
+                  <div style="min-width:0;flex:1">
+                    <div style="font-family:'Roboto Mono',monospace;font-size:14px;font-weight:500">{{ v.reg }}</div>
+                    <div style="font-size:11.5px;color:#5F6B76;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ v.model }} · {{ v.dept }}</div>
+                  </div>
+                  <span style="font-size:10.5px;font-weight:700;letter-spacing:.5px;padding:3px 7px;background:{{ v.statusBg }};color:{{ v.statusColor }};text-transform:uppercase">{{ v.status }}</span>
+                </div>
+                <div style="padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px">
+                  <div><div style="font-size:10.5px;color:#5F6B76;text-transform:uppercase;letter-spacing:.5px">Driver</div><div style="font-size:12.5px">{{ v.driver }}</div></div>
+                  <div><div style="font-size:10.5px;color:#5F6B76;text-transform:uppercase;letter-spacing:.5px">Odometer</div><div style="font-size:12.5px;font-family:'Roboto Mono',monospace">{{ v.odo }} km</div></div>
+                  <div><div style="font-size:10.5px;color:#5F6B76;text-transform:uppercase;letter-spacing:.5px">Efficiency</div><div style="font-size:12.5px;font-family:'Roboto Mono',monospace;color:{{ v.effColor }}">{{ v.eff }} L/100km</div></div>
+                  <div><div style="font-size:10.5px;color:#5F6B76;text-transform:uppercase;letter-spacing:.5px">Next service</div><div style="font-size:12.5px">{{ v.nextService }}</div></div>
+                </div>
+                <div style="padding:0 14px 12px">
+                  <div style="display:flex;justify-content:space-between;font-size:10.5px;color:#5F6B76;margin-bottom:4px"><span>TANK LEVEL</span><span style="font-family:'Roboto Mono',monospace">{{ v.fuelPct }}%</span></div>
+                  <div style="height:6px;background:#E4E8EC"><div style="height:6px;width:{{ v.fuelW }};background:{{ v.fuelColor }}"></div></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isTrips }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="font-size:12.5px;color:#5F6B76">{{ tripCountLabel }}</span>
+            <span style="flex:1"></span>
+            <button onClick="{{ openTripDlg }}" style="border:0;background:#FF6D00;color:#fff;font-size:12.5px;font-weight:500;padding:10px 16px;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;box-shadow:0 2px 4px rgba(0,0,0,.24);display:flex;align-items:center;gap:6px">
+              <span style="font-family:'Material Symbols Outlined';font-size:18px;font-feature-settings:'liga'">add_road</span>New trip request</button>
+          </div>
+          <div style="background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16);overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;min-width:820px">
+              <thead><tr style="background:#F5F7F9">
+                <th style="text-align:left;padding:11px 14px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">Trip</th>
+                <th style="text-align:left;padding:11px 14px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">Route</th>
+                <th style="text-align:left;padding:11px 14px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">Vehicle / driver</th>
+                <th style="text-align:right;padding:11px 14px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">Distance</th>
+                <th style="text-align:right;padding:11px 14px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">Fuel cost</th>
+                <th style="text-align:left;padding:11px 14px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">Status</th>
+                <th style="padding:11px 14px"></th>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{ tripRows }}" as="t" hint-placeholder-count="7">
+                  <tr onClick="{{ t.open }}" style="border-bottom:1px solid #EEF1F4;cursor:pointer" style-hover="background:#F5F9FC">
+                    <td style="padding:11px 14px;font-size:12.5px;font-family:'Roboto Mono',monospace">{{ t.id }}<div style="color:#5F6B76;font-family:Roboto,sans-serif;font-size:11.5px">{{ t.date }}</div></td>
+                    <td style="padding:11px 14px;font-size:13px">{{ t.route }}<div style="color:#5F6B76;font-size:11.5px">{{ t.purpose }}</div></td>
+                    <td style="padding:11px 14px;font-size:13px"><span style="font-family:'Roboto Mono',monospace">{{ t.vehicle }}</span><div style="color:#5F6B76;font-size:11.5px">{{ t.driver }}</div></td>
+                    <td style="padding:11px 14px;font-size:13px;text-align:right;font-family:'Roboto Mono',monospace">{{ t.distance }} km</td>
+                    <td style="padding:11px 14px;font-size:13px;text-align:right;font-family:'Roboto Mono',monospace">{{ t.cost }}</td>
+                    <td style="padding:11px 14px"><span style="font-size:10.5px;font-weight:700;letter-spacing:.5px;padding:3px 7px;background:{{ t.statusBg }};color:{{ t.statusColor }};text-transform:uppercase">{{ t.status }}</span></td>
+                    <td style="padding:11px 14px;text-align:right;white-space:nowrap">
+                      <sc-if value="{{ t.canApprove }}" hint-placeholder-val="{{ false }}">
+                        <button onClick="{{ t.approve }}" style="border:1px solid #2E7D32;background:#fff;color:#2E7D32;font-size:11px;font-weight:600;padding:5px 9px;cursor:pointer;text-transform:uppercase;margin-right:6px" style-hover="background:#EAF4EA">Approve</button>
+                      </sc-if>
+                      <sc-if value="{{ t.canClose }}" hint-placeholder-val="{{ false }}">
+                        <button onClick="{{ t.close }}" style="border:1px solid #0F4C81;background:#fff;color:#0F4C81;font-size:11px;font-weight:600;padding:5px 9px;cursor:pointer;text-transform:uppercase" style-hover="background:#E8F0F7">Close trip</button>
+                      </sc-if>
+                    </td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isFuel }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+            <sc-for list="{{ fuelKpis }}" as="k" hint-placeholder-count="4">
+              <div style="background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16);padding:14px 16px">
+                <div style="font-size:11px;color:#5F6B76;text-transform:uppercase;letter-spacing:.6px">{{ k.label }}</div>
+                <div style="font-family:'Roboto Mono',monospace;font-size:22px;font-weight:500;margin-top:4px">{{ k.value }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="font-size:12.5px;color:#5F6B76">Litres captured against fuel cards are reconciled nightly with the supplier feed.</span>
+            <span style="flex:1"></span>
+            <button onClick="{{ openFuelDlg }}" style="border:0;background:#FF6D00;color:#fff;font-size:12.5px;font-weight:500;padding:10px 16px;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;box-shadow:0 2px 4px rgba(0,0,0,.24);display:flex;align-items:center;gap:6px">
+              <span style="font-family:'Material Symbols Outlined';font-size:18px;font-feature-settings:'liga'">local_gas_station</span>Capture fuel</button>
+          </div>
+          <div style="background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16);overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;min-width:860px">
+              <thead><tr style="background:#F5F7F9">
+                <th style="text-align:left;padding:11px 14px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">Date</th>
+                <th style="text-align:left;padding:11px 14px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">Vehicle</th>
+                <th style="text-align:left;padding:11px 14px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">Station / card</th>
+                <th style="text-align:right;padding:11px 14px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">Litres</th>
+                <th style="text-align:right;padding:11px 14px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">Rate</th>
+                <th style="text-align:right;padding:11px 14px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">Amount</th>
+                <th style="text-align:right;padding:11px 14px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">Odometer</th>
+                <th style="text-align:left;padding:11px 14px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">Verification</th>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{ fuelRows }}" as="f" hint-placeholder-count="8">
+                  <tr onClick="{{ f.open }}" style="border-bottom:1px solid #EEF1F4;background:{{ f.rowBg }};cursor:pointer" style-hover="background:#F5F9FC">
+                    <td style="padding:11px 14px;font-size:12.5px;font-family:'Roboto Mono',monospace">{{ f.date }}</td>
+                    <td style="padding:11px 14px;font-size:13px"><span style="font-family:'Roboto Mono',monospace">{{ f.vehicle }}</span><div style="color:#5F6B76;font-size:11.5px">{{ f.driver }}</div></td>
+                    <td style="padding:11px 14px;font-size:13px">{{ f.station }}<div style="color:#5F6B76;font-size:11.5px;font-family:'Roboto Mono',monospace">{{ f.card }}</div></td>
+                    <td style="padding:11px 14px;font-size:13px;text-align:right;font-family:'Roboto Mono',monospace">{{ f.litres }}</td>
+                    <td style="padding:11px 14px;font-size:13px;text-align:right;font-family:'Roboto Mono',monospace">{{ f.rate }}</td>
+                    <td style="padding:11px 14px;font-size:13px;text-align:right;font-family:'Roboto Mono',monospace;font-weight:500">{{ f.cost }}</td>
+                    <td style="padding:11px 14px;font-size:13px;text-align:right;font-family:'Roboto Mono',monospace">{{ f.odo }}</td>
+                    <td style="padding:11px 14px"><span style="font-size:10.5px;font-weight:700;letter-spacing:.5px;padding:3px 7px;background:{{ f.flagBg }};color:{{ f.flagColor }};text-transform:uppercase">{{ f.flag }}</span></td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isCards }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+          <sc-for list="{{ cardList }}" as="c" hint-placeholder-count="5">
+            <div style="background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16)">
+              <div onClick="{{ c.open }}" style="background:#12395C;color:#fff;padding:14px;display:flex;flex-direction:column;gap:10px;cursor:pointer">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-family:'Material Symbols Outlined';font-size:20px;font-feature-settings:'liga'">credit_card</span>
+                  <span style="font-size:12px;letter-spacing:.6px;text-transform:uppercase;opacity:.8">NRU fuel card</span>
+                  <span style="flex:1"></span>
+                  <span style="font-size:10.5px;font-weight:700;padding:2px 6px;background:{{ c.stateBg }};color:{{ c.stateFg }};text-transform:uppercase">{{ c.state }}</span>
+                </div>
+                <div style="font-family:'Roboto Mono',monospace;font-size:17px;letter-spacing:1.5px">{{ c.number }}</div>
+                <div style="display:flex;justify-content:space-between;font-size:11.5px;opacity:.85"><span>{{ c.vehicle }}</span><span>{{ c.holder }}</span></div>
+              </div>
+              <div style="padding:14px">
+                <div style="display:flex;justify-content:space-between;font-size:11.5px;color:#5F6B76"><span>Monthly limit used</span><span style="font-family:'Roboto Mono',monospace">{{ c.used }} / {{ c.limit }}</span></div>
+                <div style="height:8px;background:#E4E8EC;margin-top:6px"><div style="height:8px;width:{{ c.pctW }};background:{{ c.pctColor }}"></div></div>
+                <div style="display:flex;gap:8px;margin-top:14px">
+                  <button onClick="{{ c.toggle }}" style="flex:1;border:1px solid {{ c.btnColor }};background:#fff;color:{{ c.btnColor }};font-size:11.5px;font-weight:600;padding:8px;cursor:pointer;text-transform:uppercase;letter-spacing:.4px">{{ c.btnLabel }}</button>
+                  <button onClick="{{ c.raise }}" style="flex:1;border:1px solid #0F4C81;background:#fff;color:#0F4C81;font-size:11.5px;font-weight:600;padding:8px;cursor:pointer;text-transform:uppercase;letter-spacing:.4px">Raise limit</button>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isMaint }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;align-items:start">
+          <sc-for list="{{ maintCols }}" as="col" hint-placeholder-count="3">
+            <div style="background:#E7ECF1;padding:10px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;gap:8px;padding:2px 4px">
+                <span style="width:10px;height:10px;background:{{ col.color }}"></span>
+                <span style="font-size:12.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase">{{ col.title }}</span>
+                <span style="font-size:11.5px;color:#5F6B76">{{ col.count }}</span>
+              </div>
+              <sc-for list="{{ col.items }}" as="w" hint-placeholder-count="3">
+                <div onClick="{{ w.open }}" style="background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16);padding:12px;display:flex;flex-direction:column;gap:8px;cursor:pointer" style-hover="box-shadow:0 4px 10px rgba(0,0,0,.22)">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span style="font-family:'Roboto Mono',monospace;font-size:12px;font-weight:500">{{ w.id }}</span>
+                    <span style="flex:1"></span>
+                    <span style="font-size:10.5px;font-weight:700;padding:2px 6px;background:{{ w.prBg }};color:{{ w.prFg }};text-transform:uppercase">{{ w.priority }}</span>
+                  </div>
+                  <div style="font-size:13px;font-weight:500">{{ w.title }}</div>
+                  <div style="font-size:11.5px;color:#5F6B76">{{ w.vehicle }} · {{ w.due }}</div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span style="font-family:'Roboto Mono',monospace;font-size:12.5px">{{ w.cost }}</span>
+                    <span style="flex:1"></span>
+                    <sc-if value="{{ w.canAdvance }}" hint-placeholder-val="{{ false }}">
+                      <button onClick="{{ w.advance }}" style="border:1px solid #0F4C81;background:#fff;color:#0F4C81;font-size:11px;font-weight:600;padding:5px 9px;cursor:pointer;text-transform:uppercase">{{ w.advanceLabel }}</button>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDrivers }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
+          <sc-for list="{{ driverList }}" as="d" hint-placeholder-count="6">
+            <div onClick="{{ d.open }}" style="background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16);padding:14px;display:flex;flex-direction:column;gap:12px;cursor:pointer" style-hover="box-shadow:0 4px 10px rgba(0,0,0,.22)">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="width:44px;height:44px;background:{{ d.avBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex:none">{{ d.initials }}</div>
+                <div style="min-width:0">
+                  <div style="font-size:14px;font-weight:500">{{ d.name }}</div>
+                  <div style="font-size:11.5px;color:#5F6B76">{{ d.licence }} · exp {{ d.expiry }}</div>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+                <div><div style="font-family:'Roboto Mono',monospace;font-size:16px">{{ d.trips }}</div><div style="font-size:10px;color:#5F6B76;text-transform:uppercase;letter-spacing:.4px">Trips</div></div>
+                <div><div style="font-family:'Roboto Mono',monospace;font-size:16px">{{ d.km }}</div><div style="font-size:10px;color:#5F6B76;text-transform:uppercase;letter-spacing:.4px">km</div></div>
+                <div><div style="font-family:'Roboto Mono',monospace;font-size:16px;color:{{ d.scoreColor }}">{{ d.score }}</div><div style="font-size:10px;color:#5F6B76;text-transform:uppercase;letter-spacing:.4px">Score</div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:10.5px;color:#5F6B76;margin-bottom:4px"><span>DRIVING BEHAVIOUR</span><span>{{ d.band }}</span></div>
+                <div style="height:6px;background:#E4E8EC"><div style="height:6px;width:{{ d.scoreW }};background:{{ d.scoreColor }}"></div></div>
+              </div>
+              <div style="font-size:11.5px;color:#5F6B76;border-top:1px solid #EEF1F4;padding-top:10px">{{ d.note }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isTracking }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;align-items:stretch">
+          <div style="background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16);display:flex;flex-direction:column;min-height:440px;grid-column:{{ mapSpan }}">
+            <div style="padding:12px 14px;border-bottom:1px solid #E3E8ED;display:flex;align-items:center;gap:10px">
+              <span style="font-size:14px;font-weight:500">Live fleet positions</span>
+              <span style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#2E7D32"><span style="width:8px;height:8px;background:#2E7D32;animation:pulse 1.6s infinite"></span>{{ liveLabel }}</span>
+              <span style="flex:1"></span>
+              <button onClick="{{ toggleLive }}" style="border:1px solid #0F4C81;background:#fff;color:#0F4C81;font-size:11.5px;font-weight:600;padding:6px 10px;cursor:pointer;text-transform:uppercase">{{ liveBtn }}</button>
+            </div>
+            <div style="flex:1;position:relative;background:repeating-linear-gradient(0deg,#E9EDF1 0 1px,transparent 1px 40px),repeating-linear-gradient(90deg,#E9EDF1 0 1px,transparent 1px 40px),#F4F6F8;overflow:hidden">
+              <div style="position:absolute;left:0;right:0;top:38%;height:10px;background:#DCE3E9"></div>
+              <div style="position:absolute;top:0;bottom:0;left:56%;width:10px;background:#DCE3E9"></div>
+              <div style="position:absolute;left:8px;bottom:8px;font-family:'Roboto Mono',monospace;font-size:10.5px;color:#8A959F">MAP TILE LAYER — bind to live GPS provider in production</div>
+              <sc-for list="{{ pins }}" as="p" hint-placeholder-count="5">
+                <div onClick="{{ p.open }}" title="{{ p.reg }}" style="position:absolute;left:{{ p.x }};top:{{ p.y }};transform:translate(-50%,-100%);cursor:pointer;display:flex;flex-direction:column;align-items:center;transition:left .9s linear,top .9s linear">
+                  <div style="background:{{ p.color }};color:#fff;font-size:10.5px;font-family:'Roboto Mono',monospace;padding:3px 6px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.3)">{{ p.reg }} · {{ p.speed }}km/h</div>
+                  <div style="width:2px;height:10px;background:{{ p.color }}"></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16);display:flex;flex-direction:column">
+            <div style="padding:12px 14px;border-bottom:1px solid #E3E8ED;font-size:14px;font-weight:500">Telemetry feed</div>
+            <div style="overflow-y:auto;max-height:420px">
+              <sc-for list="{{ telemetry }}" as="t" hint-placeholder-count="6">
+                <div onClick="{{ t.open }}" style="padding:11px 14px;border-bottom:1px solid #EEF1F4;display:flex;gap:10px;align-items:flex-start;cursor:pointer" style-hover="background:#F5F9FC">
+                  <span style="font-family:'Material Symbols Outlined';font-size:19px;font-feature-settings:'liga';color:{{ t.color }}">{{ t.icon }}</span>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:12.5px;font-weight:500">{{ t.title }}</div>
+                    <div style="font-size:11.5px;color:#5F6B76">{{ t.detail }}</div>
+                  </div>
+                  <span style="font-size:11px;color:#8A959F;font-family:'Roboto Mono',monospace">{{ t.time }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isReports }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16);padding:14px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:160px;flex:1">
+              <label style="font-size:11px;color:#5F6B76;text-transform:uppercase;letter-spacing:.5px">Report</label>
+              <select value="{{ reportType }}" onChange="{{ onReportType }}" style="border:1px solid #C3CAD1;padding:9px 10px;background:#fff;font-size:13px">
+                <option>Fuel consumption by vehicle</option>
+                <option>Cost per kilometre by department</option>
+                <option>Driver behaviour summary</option>
+                <option>Fuel card exception report</option>
+              </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:130px">
+              <label style="font-size:11px;color:#5F6B76;text-transform:uppercase;letter-spacing:.5px">Period</label>
+              <select value="{{ reportPeriod }}" onChange="{{ onReportPeriod }}" style="border:1px solid #C3CAD1;padding:9px 10px;background:#fff;font-size:13px">
+                <option>This month</option><option>Last month</option><option>Quarter to date</option><option>Year to date</option>
+              </select>
+            </div>
+            <button onClick="{{ runReport }}" style="border:0;background:#0F4C81;color:#fff;font-size:12.5px;font-weight:500;padding:11px 18px;cursor:pointer;text-transform:uppercase;letter-spacing:.5px">Run report</button>
+            <button onClick="{{ exportReport }}" style="border:1px solid #0F4C81;background:#fff;color:#0F4C81;font-size:12.5px;font-weight:500;padding:10px 16px;cursor:pointer;text-transform:uppercase;letter-spacing:.5px">Export CSV</button>
+          </div>
+          <div style="background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16)">
+            <div style="padding:14px 16px;border-bottom:1px solid #E3E8ED;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+              <span style="font-size:15px;font-weight:500">{{ reportType }}</span>
+              <span style="font-size:12px;color:#5F6B76">{{ reportPeriod }} · generated {{ reportStamp }}</span>
+            </div>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;min-width:600px">
+                <thead><tr style="background:#F5F7F9">
+                  <sc-for list="{{ reportHead }}" as="h" hint-placeholder-count="4">
+                    <th style="text-align:{{ h.align }};padding:10px 16px;font-size:11px;letter-spacing:.6px;color:#5F6B76;text-transform:uppercase;font-weight:500">{{ h.label }}</th>
+                  </sc-for>
+                </tr></thead>
+                <tbody>
+                  <sc-for list="{{ reportRows }}" as="r" hint-placeholder-count="6">
+                    <tr style="border-bottom:1px solid #EEF1F4">
+                      <td style="padding:11px 16px;font-size:13px">{{ r.a }}</td>
+                      <td style="padding:11px 16px;font-size:13px;text-align:right;font-family:'Roboto Mono',monospace">{{ r.b }}</td>
+                      <td style="padding:11px 16px;font-size:13px;text-align:right;font-family:'Roboto Mono',monospace">{{ r.c }}</td>
+                      <td style="padding:11px 16px;font-size:13px;text-align:right;font-family:'Roboto Mono',monospace;color:{{ r.dColor }};font-weight:500">{{ r.d }}</td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+                <tfoot><tr style="background:#F5F7F9;font-weight:500">
+                  <td style="padding:11px 16px;font-size:13px">{{ reportTotal.a }}</td>
+                  <td style="padding:11px 16px;font-size:13px;text-align:right;font-family:'Roboto Mono',monospace">{{ reportTotal.b }}</td>
+                  <td style="padding:11px 16px;font-size:13px;text-align:right;font-family:'Roboto Mono',monospace">{{ reportTotal.c }}</td>
+                  <td style="padding:11px 16px;font-size:13px;text-align:right;font-family:'Roboto Mono',monospace">{{ reportTotal.d }}</td>
+                </tr></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;align-items:start">
+          <div style="background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16)">
+            <div style="padding:14px 16px;border-bottom:1px solid #E3E8ED;font-size:14px;font-weight:500">Fuel control policy</div>
+            <sc-for list="{{ toggles }}" as="t" hint-placeholder-count="5">
+              <div onClick="{{ t.flip }}" style="padding:13px 16px;border-bottom:1px solid #EEF1F4;display:flex;gap:14px;align-items:center;cursor:pointer" style-hover="background:#F5F9FC">
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:500">{{ t.label }}</div>
+                  <div style="font-size:11.5px;color:#5F6B76;line-height:1.45">{{ t.desc }}</div>
+                </div>
+                <div style="width:38px;height:16px;background:{{ t.trackBg }};position:relative;flex:none">
+                  <div style="position:absolute;top:-3px;left:{{ t.knobX }};width:22px;height:22px;background:{{ t.knobBg }};box-shadow:0 1px 3px rgba(0,0,0,.35);transition:left .15s"></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16)">
+            <div style="padding:14px 16px;border-bottom:1px solid #E3E8ED;font-size:14px;font-weight:500">Thresholds</div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:18px">
+              <sc-for list="{{ sliders }}" as="s" hint-placeholder-count="3">
+                <div>
+                  <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px"><span>{{ s.label }}</span><span style="font-family:'Roboto Mono',monospace;font-weight:500">{{ s.display }}</span></div>
+                  <input type="range" min="{{ s.min }}" max="{{ s.max }}" step="{{ s.step }}" value="{{ s.value }}" onChange="{{ s.set }}" style="width:100%;accent-color:#0F4C81" />
+                  <div style="font-size:11px;color:#5F6B76;margin-top:4px">{{ s.desc }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16)">
+            <div style="padding:14px 16px;border-bottom:1px solid #E3E8ED;font-size:14px;font-weight:500">Integrations</div>
+            <sc-for list="{{ integrations }}" as="i" hint-placeholder-count="4">
+              <div onClick="{{ i.open }}" style="padding:13px 16px;border-bottom:1px solid #EEF1F4;display:flex;gap:12px;align-items:center;cursor:pointer" style-hover="background:#F5F9FC">
+                <span style="font-family:'Material Symbols Outlined';font-size:20px;font-feature-settings:'liga';color:#0F4C81">{{ i.icon }}</span>
+                <div style="flex:1"><div style="font-size:13px">{{ i.name }}</div><div style="font-size:11.5px;color:#5F6B76">{{ i.detail }}</div></div>
+                <span style="font-size:10.5px;font-weight:700;padding:3px 7px;background:{{ i.bg }};color:{{ i.fg }};text-transform:uppercase">{{ i.state }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="flex:none;height:8px"></div>
+    </main>
+
+    <sc-if value="{{ vehicleOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;z-index:40;display:flex;justify-content:flex-end">
+        <div onClick="{{ closeVehicle }}" style="position:absolute;inset:0;background:rgba(0,0,0,.4)"></div>
+        <aside style="position:relative;width:min(420px,100%);background:#fff;box-shadow:-2px 0 10px rgba(0,0,0,.3);display:flex;flex-direction:column;animation:slideup .18s ease-out">
+          <div style="background:#0F4C81;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px">
+            <div style="flex:1"><div style="font-family:'Roboto Mono',monospace;font-size:17px;font-weight:500">{{ sel.reg }}</div><div style="font-size:12px;opacity:.8">{{ sel.model }} · {{ sel.dept }}</div></div>
+            <button onClick="{{ closeVehicle }}" style="border:0;background:transparent;color:#fff;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Outlined';font-size:22px;font-feature-settings:'liga'">close</span></button>
+          </div>
+          <div style="display:flex;border-bottom:1px solid #E3E8ED;background:#F5F7F9">
+            <sc-for list="{{ vehTabs }}" as="t" hint-placeholder-count="3">
+              <button onClick="{{ t.pick }}" style="flex:1;border:0;border-bottom:3px solid {{ t.bar }};background:transparent;color:{{ t.fg }};font-size:12px;font-weight:600;padding:12px 6px;cursor:pointer;text-transform:uppercase;letter-spacing:.5px">{{ t.label }}</button>
+            </sc-for>
+          </div>
+          <div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px">
+            <sc-if value="{{ vehTab0 }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                  <sc-for list="{{ selSpecs }}" as="s" hint-placeholder-count="6">
+                    <div style="border:1px solid #E3E8ED;padding:10px 12px">
+                      <div style="font-size:10.5px;color:#5F6B76;text-transform:uppercase;letter-spacing:.5px">{{ s.label }}</div>
+                      <div style="font-size:13.5px;font-family:'Roboto Mono',monospace;margin-top:2px">{{ s.value }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div>
+                  <div style="font-size:12.5px;font-weight:500;margin-bottom:8px">Fuel efficiency trend (L/100km)</div>
+                  <div style="display:flex;align-items:flex-end;gap:6px;height:100px">
+                    <sc-for list="{{ selTrend }}" as="p" hint-placeholder-count="8">
+                      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:4px;align-items:center">
+                        <div style="width:100%;height:{{ p.h }};background:{{ p.bg }}"></div>
+                        <span style="font-size:9.5px;color:#8A959F">{{ p.label }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+                <button onClick="{{ dispatchSel }}" style="border:0;background:#FF6D00;color:#fff;font-size:12.5px;font-weight:500;padding:12px;cursor:pointer;text-transform:uppercase;letter-spacing:.5px">Dispatch this vehicle</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ vehTab1 }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column">
+                <sc-for list="{{ selFuel }}" as="f" hint-placeholder-count="4">
+                  <div style="padding:11px 0;border-bottom:1px solid #EEF1F4;display:flex;gap:12px;align-items:center">
+                    <div style="flex:1"><div style="font-size:12.5px">{{ f.station }}</div><div style="font-size:11px;color:#5F6B76;font-family:'Roboto Mono',monospace">{{ f.date }} · {{ f.litres }} L</div></div>
+                    <span style="font-family:'Roboto Mono',monospace;font-size:13px">{{ f.cost }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ vehTab2 }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <sc-for list="{{ selHistory }}" as="h" hint-placeholder-count="4">
+                  <div style="display:flex;gap:12px">
+                    <div style="display:flex;flex-direction:column;align-items:center;flex:none"><span style="width:10px;height:10px;background:{{ h.color }};margin-top:4px"></span><span style="flex:1;width:2px;background:#E3E8ED"></span></div>
+                    <div style="padding-bottom:12px"><div style="font-size:12.5px;font-weight:500">{{ h.title }}</div><div style="font-size:11.5px;color:#5F6B76">{{ h.detail }}</div></div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </aside>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ dlgOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;z-index:45;display:flex;align-items:center;justify-content:center;padding:16px">
+        <div onClick="{{ closeDlg }}" style="position:absolute;inset:0;background:rgba(0,0,0,.5)"></div>
+        <div style="position:relative;background:#fff;width:min(560px,100%);max-height:100%;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:slideup .16s ease-out">
+          <div style="padding:16px 20px;border-bottom:1px solid #E3E8ED;font-size:16px;font-weight:500">{{ dlgTitle }}</div>
+          <div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+            <sc-for list="{{ dlgFields }}" as="f" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;gap:5px;grid-column:{{ f.span }}">
+                <label style="font-size:11px;color:#5F6B76;text-transform:uppercase;letter-spacing:.5px">{{ f.label }}</label>
+                <sc-if value="{{ f.isSelect }}" hint-placeholder-val="{{ false }}">
+                  <select value="{{ f.value }}" onChange="{{ f.set }}" style="border:1px solid #C3CAD1;border-bottom:2px solid #0F4C81;padding:10px;background:#F7F9FA;font-size:13.5px">
+                    <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="3"><option>{{ o }}</option></sc-for>
+                  </select>
+                </sc-if>
+                <sc-if value="{{ f.isInput }}" hint-placeholder-val="{{ true }}">
+                  <input value="{{ f.value }}" onChange="{{ f.set }}" placeholder="{{ f.hint }}" style="border:1px solid #C3CAD1;border-bottom:2px solid #0F4C81;padding:10px;background:#F7F9FA;font-size:13.5px;width:100%" />
+                </sc-if>
+                <span style="font-size:11px;color:{{ f.helpColor }}">{{ f.help }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ dlgSummary }}" hint-placeholder-val="{{ false }}">
+            <div style="margin:0 20px 16px;background:#F1F5F8;border-left:4px solid #0F4C81;padding:12px 14px;font-size:12.5px;line-height:1.6">{{ dlgSummary }}</div>
+          </sc-if>
+          <div style="padding:12px 20px 18px;display:flex;gap:10px;justify-content:flex-end;border-top:1px solid #E3E8ED">
+            <button onClick="{{ closeDlg }}" style="border:0;background:transparent;color:#5F6B76;font-size:12.5px;font-weight:600;padding:11px 16px;cursor:pointer;text-transform:uppercase;letter-spacing:.5px">Cancel</button>
+            <button onClick="{{ submitDlg }}" style="border:0;background:#0F4C81;color:#fff;font-size:12.5px;font-weight:600;padding:11px 20px;cursor:pointer;text-transform:uppercase;letter-spacing:.5px">{{ dlgCta }}</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ detailOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;z-index:46;display:flex;justify-content:flex-end">
+        <div onClick="{{ closeDetail }}" style="position:absolute;inset:0;background:rgba(0,0,0,.42)"></div>
+        <aside style="position:relative;width:min(620px,100%);background:#fff;box-shadow:-2px 0 12px rgba(0,0,0,.35);display:flex;flex-direction:column;animation:slideup .16s ease-out">
+          <div style="background:#0F4C81;color:#fff;padding:14px 16px;display:flex;align-items:flex-start;gap:10px">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:16px;font-weight:500;line-height:1.3">{{ detail.title }}</div>
+              <div style="font-size:12px;opacity:.82;margin-top:3px">{{ detail.subtitle }}</div>
+            </div>
+            <button onClick="{{ closeDetail }}" title="Close" style="border:0;background:transparent;color:#fff;cursor:pointer;width:34px;height:34px;display:flex;align-items:center;justify-content:center;flex:none"><span style="font-family:'Material Symbols Outlined';font-size:21px;font-feature-settings:'liga'">close</span></button>
+          </div>
+          <sc-if value="{{ detail.hasChips }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;padding:11px 16px;border-bottom:1px solid #E3E8ED;background:#F5F7F9">
+              <sc-for list="{{ detail.chips }}" as="c" hint-placeholder-count="3">
+                <span style="font-size:10.5px;font-weight:700;letter-spacing:.5px;padding:4px 8px;background:{{ c.bg }};color:{{ c.fg }};text-transform:uppercase">{{ c.label }}</span>
+              </sc-for>
+            </div>
+          </sc-if>
+          <div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:20px">
+            <sc-for list="{{ detail.sections }}" as="s" hint-placeholder-count="3">
+              <div>
+                <div style="font-size:11px;color:#5F6B76;text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:9px">{{ s.title }}</div>
+                <sc-if value="{{ s.isKv }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px">
+                    <sc-for list="{{ s.kv }}" as="k" hint-placeholder-count="4">
+                      <div style="border:1px solid #E3E8ED;padding:9px 11px">
+                        <div style="font-size:10.5px;color:#5F6B76;text-transform:uppercase;letter-spacing:.5px">{{ k.label }}</div>
+                        <div style="font-size:13.5px;margin-top:3px;color:{{ k.color }}">{{ k.value }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ s.isRows }}" hint-placeholder-val="{{ false }}">
+                  <div style="border:1px solid #E3E8ED;overflow-x:auto">
+                    <table style="width:100%;border-collapse:collapse">
+                      <thead><tr style="background:#F5F7F9">
+                        <sc-for list="{{ s.head }}" as="h" hint-placeholder-count="3">
+                          <th style="text-align:{{ h.align }};padding:8px 11px;font-size:10.5px;letter-spacing:.5px;color:#5F6B76;text-transform:uppercase;font-weight:500">{{ h.label }}</th>
+                        </sc-for>
+                      </tr></thead>
+                      <tbody>
+                        <sc-for list="{{ s.body }}" as="r" hint-placeholder-count="3">
+                          <tr style="border-top:1px solid #EEF1F4">
+                            <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="3">
+                              <td style="padding:9px 11px;font-size:12.5px;text-align:{{ c.align }};font-family:{{ c.font }};color:{{ c.color }};font-weight:{{ c.weight }}">{{ c.v }}</td>
+                            </sc-for>
+                          </tr>
+                        </sc-for>
+                      </tbody>
+                    </table>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ s.isTimeline }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-direction:column">
+                    <sc-for list="{{ s.items }}" as="i" hint-placeholder-count="3">
+                      <div style="display:flex;gap:12px">
+                        <div style="display:flex;flex-direction:column;align-items:center;flex:none"><span style="width:10px;height:10px;background:{{ i.color }};margin-top:4px"></span><span style="flex:1;width:2px;background:#E3E8ED"></span></div>
+                        <div style="padding-bottom:13px"><div style="font-size:12.5px;font-weight:500">{{ i.title }}</div><div style="font-size:11.5px;color:#5F6B76">{{ i.detail }}</div></div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ s.isNote }}" hint-placeholder-val="{{ false }}">
+                  <div style="background:{{ s.noteBg }};border-left:4px solid {{ s.noteBar }};padding:12px 14px;font-size:12.5px;line-height:1.55;color:{{ s.noteColor }}">{{ s.text }}</div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ detail.hasActions }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:12px 16px;border-top:1px solid #E3E8ED;background:#F5F7F9;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+              <sc-for list="{{ detail.actions }}" as="a" hint-placeholder-count="2">
+                <button onClick="{{ a.run }}" style="border:1px solid {{ a.bd }};background:{{ a.bg }};color:{{ a.fg }};font-size:12px;font-weight:600;padding:10px 16px;cursor:pointer;text-transform:uppercase;letter-spacing:.5px">{{ a.label }}</button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </aside>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ snack }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:16px;bottom:16px;z-index:60;background:#22303C;color:#fff;padding:14px 18px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.4);display:flex;align-items:center;gap:18px;animation:slideup .18s ease-out;max-width:calc(100% - 32px)">
+        <span>{{ snack }}</span>
+        <button onClick="{{ clearSnack }}" style="border:0;background:transparent;color:#FF9F45;font-size:12px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px">Dismiss</button>
+      </div>
+    </sc-if>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+const money = n => "E " + Math.round(n).toLocaleString("en-US");
+const pad = n => String(n).padStart(2, "0");
+
+class Component extends DCLogic {
+  state = {
+    screen: "dashboard", navOpen: true, narrow: false, query: "", status: "All", detail: null,
+    sel: null, vehTab: 0, dlg: null, form: {}, snack: "", live: true, tick: 0,
+    vehicles: [
+      { reg: "SD 412 AM", model: "Toyota Hilux 2.4 D4D", type: "pickup", icon: "local_shipping", dept: "Field Operations", driver: "Sipho Dlamini", status: "On trip", odo: 148320, fuelPct: 62, eff: 9.8, target: 9.2, next: "12 Sep 2026", tank: 80 },
+      { reg: "SD 118 BS", model: "Toyota Land Cruiser", type: "4x4", icon: "directions_car", dept: "Executive", driver: "Thandi Nkosi", status: "Available", odo: 92140, fuelPct: 88, eff: 12.4, target: 11.5, next: "03 Oct 2026", tank: 138 },
+      { reg: "SD 907 CM", model: "Isuzu NQR Truck", type: "truck", icon: "local_shipping", dept: "Logistics", driver: "Musa Simelane", status: "On trip", odo: 214600, fuelPct: 34, eff: 24.1, target: 22.0, next: "21 Aug 2026", tank: 200 },
+      { reg: "SD 233 DM", model: "Nissan NP200", type: "pickup", icon: "directions_car", dept: "Procurement", driver: "Lindiwe Mabuza", status: "Workshop", odo: 67890, fuelPct: 18, eff: 8.1, target: 8.5, next: "In workshop", tank: 50 },
+      { reg: "SD 550 EM", model: "Toyota Quantum 14s", type: "bus", icon: "airport_shuttle", dept: "Staff Transport", driver: "Bheki Ndlovu", status: "Available", odo: 131450, fuelPct: 71, eff: 13.9, target: 13.0, next: "28 Aug 2026", tank: 70 },
+      { reg: "SD 044 FM", model: "Ford Ranger XLT", type: "pickup", icon: "local_shipping", dept: "Field Operations", driver: "Nomsa Gama", status: "On trip", odo: 45210, fuelPct: 55, eff: 10.9, target: 9.8, next: "15 Nov 2026", tank: 80 },
+      { reg: "SD 781 GM", model: "Hyundai H100", type: "van", icon: "airport_shuttle", dept: "Stores", driver: "Sabelo Magagula", status: "Available", odo: 98330, fuelPct: 44, eff: 11.2, target: 11.0, next: "09 Sep 2026", tank: 65 },
+      { reg: "SD 620 HM", model: "Isuzu D-Max", type: "pickup", icon: "directions_car", dept: "IT Department", driver: "Unassigned", status: "Grounded", odo: 176900, fuelPct: 9, eff: 15.7, target: 10.4, next: "Overdue 1 400 km", tank: 76 },
+    ],
+    trips: [
+      { id: "TRP-2609", date: "09 Aug 2026", from: "Mbabane HQ", to: "Manzini Depot", vehicle: "SD 412 AM", driver: "Sipho Dlamini", km: 42, purpose: "Field data collection", status: "In progress", cost: 118 },
+      { id: "TRP-2608", date: "09 Aug 2026", from: "Mbabane HQ", to: "Siteki Clinic", vehicle: "SD 907 CM", driver: "Musa Simelane", km: 168, purpose: "Supplies delivery", status: "In progress", cost: 902 },
+      { id: "TRP-2607", date: "08 Aug 2026", from: "Manzini Depot", to: "Nhlangano", vehicle: "SD 044 FM", driver: "Nomsa Gama", km: 121, purpose: "Enumerator drop-off", status: "Pending", cost: 0 },
+      { id: "TRP-2606", date: "08 Aug 2026", from: "Mbabane HQ", to: "Piggs Peak", vehicle: "SD 550 EM", driver: "Bheki Ndlovu", km: 96, purpose: "Staff transport", status: "Completed", cost: 421 },
+      { id: "TRP-2605", date: "07 Aug 2026", from: "Mbabane HQ", to: "Big Bend", vehicle: "SD 118 BS", driver: "Thandi Nkosi", km: 184, purpose: "Executive site visit", status: "Completed", cost: 736 },
+      { id: "TRP-2604", date: "07 Aug 2026", from: "Stores", to: "Lobamba", vehicle: "SD 781 GM", driver: "Sabelo Magagula", km: 28, purpose: "Equipment transfer", status: "Completed", cost: 96 },
+      { id: "TRP-2603", date: "06 Aug 2026", from: "Manzini Depot", to: "Mbabane HQ", vehicle: "SD 412 AM", driver: "Sipho Dlamini", km: 44, purpose: "Return leg", status: "Completed", cost: 124 },
+    ],
+    fuel: [
+      { date: "09 Aug", vehicle: "SD 907 CM", driver: "Musa Simelane", station: "Galp Manzini", card: "•••• 4417", litres: 92.4, rate: 21.4, odo: 214600, flag: "Verified" },
+      { date: "09 Aug", vehicle: "SD 412 AM", driver: "Sipho Dlamini", station: "Total Mbabane", card: "•••• 2210", litres: 48.2, rate: 21.4, odo: 148320, flag: "Verified" },
+      { date: "08 Aug", vehicle: "SD 620 HM", driver: "Unassigned", station: "Puma Matsapha", card: "•••• 8890", litres: 71.0, rate: 21.4, odo: 176420, flag: "Exception" },
+      { date: "08 Aug", vehicle: "SD 044 FM", driver: "Nomsa Gama", station: "Engen Nhlangano", card: "•••• 5561", litres: 55.6, rate: 21.9, odo: 45120, flag: "Verified" },
+      { date: "07 Aug", vehicle: "SD 550 EM", driver: "Bheki Ndlovu", station: "Total Mbabane", card: "•••• 3302", litres: 44.1, rate: 21.4, odo: 131280, flag: "Pending" },
+      { date: "07 Aug", vehicle: "SD 118 BS", driver: "Thandi Nkosi", station: "Galp Big Bend", card: "•••• 1194", litres: 96.8, rate: 21.9, odo: 92010, flag: "Verified" },
+      { date: "06 Aug", vehicle: "SD 781 GM", driver: "Sabelo Magagula", station: "Puma Matsapha", card: "•••• 7743", litres: 38.5, rate: 21.4, odo: 98200, flag: "Verified" },
+      { date: "06 Aug", vehicle: "SD 907 CM", driver: "Musa Simelane", station: "Engen Siteki", card: "•••• 4417", litres: 118.9, rate: 21.9, odo: 214180, flag: "Exception" },
+    ],
+    cards: [
+      { number: "5412 •••• •••• 4417", vehicle: "SD 907 CM", holder: "M. Simelane", used: 8420, limit: 9000, active: true },
+      { number: "5412 •••• •••• 2210", vehicle: "SD 412 AM", holder: "S. Dlamini", used: 3110, limit: 6000, active: true },
+      { number: "5412 •••• •••• 8890", vehicle: "SD 620 HM", holder: "Pool", used: 5210, limit: 5000, active: false },
+      { number: "5412 •••• •••• 5561", vehicle: "SD 044 FM", holder: "N. Gama", used: 2440, limit: 6000, active: true },
+      { number: "5412 •••• •••• 3302", vehicle: "SD 550 EM", holder: "B. Ndlovu", used: 4180, limit: 7000, active: true },
+    ],
+    work: [
+      { id: "WO-1182", title: "45 000 km major service", vehicle: "SD 044 FM", due: "Due 15 Aug", cost: 4200, priority: "Routine", stage: 0 },
+      { id: "WO-1183", title: "Front brake pads + discs", vehicle: "SD 233 DM", due: "Due 12 Aug", cost: 2850, priority: "High", stage: 1 },
+      { id: "WO-1184", title: "Injector diagnostics — high burn", vehicle: "SD 620 HM", due: "Overdue", cost: 6100, priority: "Critical", stage: 1 },
+      { id: "WO-1185", title: "Tyre replacement ×4", vehicle: "SD 907 CM", due: "Due 21 Aug", cost: 9800, priority: "High", stage: 0 },
+      { id: "WO-1180", title: "Annual roadworthy inspection", vehicle: "SD 550 EM", due: "Closed 04 Aug", cost: 1150, priority: "Routine", stage: 2 },
+      { id: "WO-1181", title: "Aircon regas", vehicle: "SD 118 BS", due: "Closed 05 Aug", cost: 980, priority: "Routine", stage: 2 },
+    ],
+    drivers: [
+      { name: "Sipho Dlamini", licence: "EC 4471", expiry: "03/2028", trips: 148, km: 21400, score: 92, note: "No incidents in 18 months. Certified defensive driving." },
+      { name: "Thandi Nkosi", licence: "EB 1180", expiry: "11/2027", trips: 96, km: 18240, score: 88, note: "Two speeding notifications this quarter." },
+      { name: "Musa Simelane", licence: "EC1 9021", expiry: "07/2029", trips: 212, km: 46800, score: 74, note: "Harsh braking above fleet average — coaching scheduled." },
+      { name: "Nomsa Gama", licence: "EB 5540", expiry: "02/2027", trips: 118, km: 16900, score: 95, note: "Top of the efficiency league three months running." },
+      { name: "Bheki Ndlovu", licence: "EC 7712", expiry: "09/2026", trips: 174, km: 33100, score: 81, note: "Licence expires in 30 days — renewal reminder issued." },
+      { name: "Sabelo Magagula", licence: "EB 2298", expiry: "05/2028", trips: 64, km: 8900, score: 86, note: "Stores runs only. Idling time slightly elevated." },
+    ],
+    pins: [
+      { reg: "SD 412 AM", x: 24, y: 30, speed: 62, dx: 1.1, dy: .4 },
+      { reg: "SD 907 CM", x: 68, y: 55, speed: 78, dx: -.8, dy: .9 },
+      { reg: "SD 044 FM", x: 45, y: 72, speed: 0, dx: 0, dy: 0 },
+      { reg: "SD 550 EM", x: 80, y: 22, speed: 44, dx: .6, dy: -.5 },
+      { reg: "SD 118 BS", x: 12, y: 60, speed: 51, dx: 1.4, dy: -.7 },
+    ],
+    policy: [
+      { label: "Block off-hours refuelling", desc: "Fuel card declines outside 06:00–19:00 unless a trip is open.", on: true },
+      { label: "Require odometer photo", desc: "Driver must capture the dashboard reading in the mobile app.", on: true },
+      { label: "Geo-fence fuel stations", desc: "Only approved supplier sites within 2 km of the route.", on: false },
+      { label: "Auto-flag tank overfill", desc: "Raise an exception when litres exceed the vehicle tank capacity.", on: true },
+      { label: "Push cost to Accounting", desc: "Post verified fuel to the GL fuel expense account nightly.", on: true },
+    ],
+    thresh: { variance: 12, idle: 15, price: 22 },
+    reportType: "Fuel consumption by vehicle", reportPeriod: "This month", reportStamp: "09 Aug 2026 07:42",
+    vehicleSeq: 0,
+  };
+
+  componentDidMount() {
+    this._r = () => this.setState({ narrow: window.innerWidth < 900, navOpen: window.innerWidth >= 900 });
+    this._r(); window.addEventListener("resize", this._r);
+    this._t = setInterval(() => {
+      if (!this.state.live || this.state.screen !== "tracking") return;
+      this.setState(s => ({
+        pins: s.pins.map(p => {
+          if (!p.dx && !p.dy) return p;
+          let x = p.x + p.dx, y = p.y + p.dy, dx = p.dx, dy = p.dy;
+          if (x > 92 || x < 6) dx = -dx; if (y > 88 || y < 8) dy = -dy;
+          return { ...p, x: Math.max(6, Math.min(92, x)), y: Math.max(8, Math.min(88, y)), dx, dy, speed: Math.max(0, Math.round(p.speed + (Math.random() * 10 - 5))) };
+        }), tick: s.tick + 1
+      }));
+    }, 1000);
+  }
+  componentWillUnmount() { window.removeEventListener("resize", this._r); clearInterval(this._t); }
+
+  toast(m) { clearTimeout(this._s); this.setState({ snack: m }); this._s = setTimeout(() => this.setState({ snack: "" }), 4000); }
+  go(screen) { this.setState(s => ({ screen, navOpen: s.narrow ? false : s.navOpen, sel: null })); }
+  setForm(k, v) { this.setState(s => ({ form: { ...s.form, [k]: v } })); }
+
+  effColor(v, t) { return v > t * 1.1 ? "#C62828" : v > t ? "#ED6C02" : "#2E7D32"; }
+
+  openDetail(d) { this.setState({ detail: d }); }
+  act(fn) { return () => { this.setState({ detail: null }); fn(); }; }
+  normDetail(D) {
+    const kind = k => k === "primary" ? { bg: "#0F4C81", fg: "#fff", bd: "#0F4C81" } : k === "danger" ? { bg: "#fff", fg: "#C62828", bd: "#C62828" } : { bg: "#fff", fg: "#0F4C81", bd: "#0F4C81" };
+    if (!D) return { title: "", subtitle: "", chips: [], sections: [], actions: [], hasActions: false, hasChips: false };
+    return {
+      title: D.title, subtitle: D.subtitle || "",
+      chips: (D.chips || []).map(c => ({ label: c.label, bg: c.bg || "#E4EEF6", fg: c.fg || "#0F4C81" })),
+      hasChips: (D.chips || []).length > 0,
+      sections: (D.sections || []).map(s => ({
+        title: s.title || "",
+        isKv: s.type === "kv", isRows: s.type === "rows", isTimeline: s.type === "timeline", isNote: s.type === "note",
+        kv: (s.kv || []).map(k => ({ label: k.label, value: k.value, color: k.color || "#16202A" })),
+        head: (s.head || []).map((h, i) => ({ label: h, align: i === 0 ? "left" : "right" })),
+        body: (s.body || []).map(r => ({
+          cells: r.map((c, i) => {
+            const o = (c && typeof c === "object") ? c : { v: String(c) };
+            const left = o.align === "left" || i === 0;
+            return { v: o.v, align: o.align || (i === 0 ? "left" : "right"), font: (o.mono === false || left) ? "Roboto,sans-serif" : "'Roboto Mono',monospace", color: o.color || "#16202A", weight: o.weight || "400" };
+          })
+        })),
+        items: (s.items || []).map(i => ({ title: i.title, detail: i.detail, color: i.color || "#0F4C81" })),
+        text: s.text || "", noteColor: s.color || "#16202A", noteBg: s.bg || "#F1F5F8", noteBar: s.bar || "#0F4C81",
+      })),
+      actions: (D.actions || []).map(a => ({ label: a.label, run: a.run, ...kind(a.kind) })),
+      hasActions: (D.actions || []).length > 0,
+    };
+  }
+
+  chipFor(status) {
+    const map = { "On trip": ["#E4EEF6", "#0F4C81"], Available: ["#E8F3E9", "#2E7D32"], Workshop: ["#FDF0E2", "#ED6C02"], Grounded: ["#FBE6E6", "#C62828"], Completed: ["#E8F3E9", "#2E7D32"], "In progress": ["#E4EEF6", "#0F4C81"], Pending: ["#FDF0E2", "#ED6C02"], Verified: ["#E8F3E9", "#2E7D32"], Exception: ["#FBE6E6", "#C62828"] };
+    const c = map[status] || ["#EEF1F4", "#5F6B76"];
+    return { label: status, bg: c[0], fg: c[1] };
+  }
+
+  tripDetail(t) {
+    const v = this.state.vehicles.find(x => x.reg === t.vehicle) || {};
+    const est = t.km * (v.eff || 10) / 100;
+    const log = [
+      ["06:12", { v: "Trip requested by " + t.driver, align: "left" }, { v: v.odo ? v.odo.toLocaleString() : "—" }],
+      ["06:40", { v: t.status === "Pending" ? "Awaiting Transport Officer authorisation" : "Authorised by T. Dube (Transport Officer)", align: "left" }, { v: "—" }],
+      ["07:05", { v: t.status === "Pending" ? "Fuel card locked until authorisation" : "Fuel card unlocked · geo-fence armed", align: "left" }, { v: "—" }],
+      ["07:18", { v: "Departed " + t.from, align: "left" }, { v: v.odo ? v.odo.toLocaleString() : "—" }],
+    ];
+    if (t.status === "Completed") log.push(["11:02", { v: "Arrived " + t.to + " · trip closed", align: "left" }, { v: v.odo ? (v.odo + t.km).toLocaleString() : "—" }]);
+    return {
+      title: t.id + " · " + t.from + " → " + t.to,
+      subtitle: t.date + " · " + t.purpose,
+      chips: [this.chipFor(t.status), { label: t.vehicle }, { label: t.driver }],
+      sections: [
+        { type: "kv", title: "Trip record", kv: [
+          { label: "Vehicle", value: t.vehicle + " · " + (v.model || "") },
+          { label: "Driver", value: t.driver },
+          { label: "Cost centre", value: v.dept || "Unallocated" },
+          { label: "Distance", value: t.km.toLocaleString() + " km" },
+          { label: "Projected fuel", value: est.toFixed(1) + " L" },
+          { label: "Fuel cost", value: t.cost ? money(t.cost) : "Posts on close", color: t.cost ? "#16202A" : "#5F6B76" },
+        ] },
+        { type: "rows", title: "Event log", head: ["Time", "Event", "Odometer"], body: log },
+        { type: "timeline", title: "Authorisation workflow", items: [
+          { title: "Requested", detail: t.date + " · " + t.driver, color: "#2E7D32" },
+          { title: t.status === "Pending" ? "Awaiting authorisation" : "Authorised", detail: t.status === "Pending" ? "Transport Officer queue" : "T. Dube · within delegation", color: t.status === "Pending" ? "#ED6C02" : "#2E7D32" },
+          { title: t.status === "Completed" ? "Closed and costed" : "Close-out pending", detail: t.cost ? money(t.cost) + " charged to " + (v.dept || "cost centre") : "Driver must capture the closing odometer", color: t.status === "Completed" ? "#2E7D32" : "#5F6B76" },
+        ] },
+      ],
+      actions: t.status === "Pending"
+        ? [{ label: "Reject", kind: "danger", run: this.act(() => { this.setState(s => ({ trips: s.trips.filter(x => x.id !== t.id) })); this.toast(t.id + " rejected and removed from the register."); }) },
+           { label: "Authorise trip", kind: "primary", run: this.act(() => { this.setState(s => ({ trips: s.trips.map(x => x.id === t.id ? { ...x, status: "In progress" } : x) })); this.toast(t.id + " authorised. Fuel card unlocked for this route."); }) }]
+        : t.status === "In progress"
+          ? [{ label: "Close trip", kind: "primary", run: this.act(() => { this.setState(s => ({ trips: s.trips.map(x => x.id === t.id ? { ...x, status: "Completed", cost: Math.round(x.km * 4.6) } : x) })); this.toast(t.id + " closed. " + money(t.km * 4.6) + " posted to the cost centre."); }) }]
+          : [{ label: "Print trip sheet", run: this.act(() => this.toast("Trip sheet " + t.id + " queued for printing.")) }],
+    };
+  }
+
+  fuelDetail(f) {
+    const v = this.state.vehicles.find(x => x.reg === f.vehicle) || {};
+    const amount = f.litres * f.rate;
+    const since = 412;
+    const burn = f.litres / since * 100;
+    return {
+      title: "Fuel transaction · " + f.vehicle,
+      subtitle: f.date + " 2026 · " + f.station + " · card " + f.card,
+      chips: [this.chipFor(f.flag), { label: f.litres.toFixed(1) + " L" }, { label: money(amount) }],
+      sections: [
+        { type: "kv", title: "Transaction", kv: [
+          { label: "Litres", value: f.litres.toFixed(1) + " L" },
+          { label: "Rate", value: "E " + f.rate.toFixed(2) + " / L" },
+          { label: "Amount", value: money(amount) },
+          { label: "Odometer", value: f.odo.toLocaleString() + " km" },
+          { label: "Distance since last fill", value: since + " km" },
+          { label: "Implied consumption", value: burn.toFixed(1) + " L/100km", color: v.target && burn > v.target * 1.1 ? "#C62828" : "#2E7D32" },
+          { label: "Driver", value: f.driver },
+          { label: "Tank capacity", value: (v.tank || "—") + " L" },
+        ] },
+        { type: "rows", title: "General ledger posting", head: ["Account", "Cost centre", "Debit", "Credit"], body: [
+          [{ v: "4200 Fuel and oil", align: "left" }, { v: v.dept || "Unallocated", align: "left" }, money(amount), ""],
+          [{ v: "2100 Accounts payable", align: "left" }, { v: "—", align: "left" }, "", money(amount)],
+        ] },
+        f.flag === "Exception"
+          ? { type: "note", title: "Exception", text: "Litres dispensed exceed the vehicle tank capacity or the fill interval is implausible. The transaction is held out of the accounting interface until a fleet officer verifies or rejects it. Driver statement and station receipt required.", bg: "#FBE6E6", bar: "#C62828", color: "#8B1F1F" }
+          : { type: "note", title: "Verification", text: f.flag === "Verified" ? "Matched against the supplier feed and the driver's odometer photo. Posted to the general ledger on the nightly interface." : "Awaiting the supplier settlement file. Auto-verifies within 24 hours if litres, price and odometer agree.", bg: f.flag === "Verified" ? "#E8F3E9" : "#FDF0E2", bar: f.flag === "Verified" ? "#2E7D32" : "#ED6C02" },
+      ],
+      actions: f.flag === "Verified" ? [{ label: "View receipt image", run: this.act(() => this.toast("Receipt image opened from document storage.")) }]
+        : [{ label: "Reject transaction", kind: "danger", run: this.act(() => { this.setState(s => ({ fuel: s.fuel.filter(x => x !== f) })); this.toast("Transaction rejected and referred to the supplier for credit."); }) },
+           { label: "Verify & post", kind: "primary", run: this.act(() => { this.setState(s => ({ fuel: s.fuel.map(x => x === f ? { ...x, flag: "Verified" } : x) })); this.toast(money(amount) + " verified and posted to account 4200 Fuel and oil."); }) }],
+    };
+  }
+
+  cardDetail(c) {
+    const txns = this.state.fuel.filter(f => f.card === "•••• " + c.number.slice(-4));
+    return {
+      title: "Fuel card " + c.number.slice(-4),
+      subtitle: c.number + " · " + c.vehicle + " · " + c.holder,
+      chips: [{ label: c.active ? "Active" : "Blocked", bg: c.active ? "#E8F3E9" : "#FBE6E6", fg: c.active ? "#2E7D32" : "#C62828" }, { label: "Limit " + money(c.limit) }],
+      sections: [
+        { type: "kv", title: "Card control", kv: [
+          { label: "Assigned vehicle", value: c.vehicle },
+          { label: "Holder", value: c.holder },
+          { label: "Monthly limit", value: money(c.limit) },
+          { label: "Used this month", value: money(c.used), color: c.used > c.limit ? "#C62828" : "#16202A" },
+          { label: "Available", value: money(Math.max(0, c.limit - c.used)) },
+          { label: "Product restriction", value: "Diesel only" },
+        ] },
+        { type: "rows", title: "Recent transactions", head: ["Date", "Station", "Litres", "Amount"], body: txns.length ? txns.map(f => [{ v: f.date, align: "left" }, { v: f.station, align: "left" }, f.litres.toFixed(1), money(f.litres * f.rate)]) : [[{ v: "No transactions in this period", align: "left" }, "", "", ""]] },
+        { type: "note", title: "Policy applied", text: "Off-hours refuelling blocked (06:00–19:00), odometer photo required, tank overfill auto-flagged. Limit changes above E 1 000 route to Accounting for approval." },
+      ],
+      actions: [
+        { label: c.active ? "Block card" : "Unblock card", kind: c.active ? "danger" : "outline", run: this.act(() => { this.setState(s => ({ cards: s.cards.map(x => x === c ? { ...x, active: !x.active } : x) })); this.toast("Card " + c.number.slice(-4) + (c.active ? " blocked at the supplier switch." : " reactivated.")); }) },
+        { label: "Raise limit E 1 000", kind: "primary", run: this.act(() => { this.setState(s => ({ cards: s.cards.map(x => x === c ? { ...x, limit: x.limit + 1000 } : x) })); this.toast("Limit increase routed to Accounting for approval."); }) },
+      ],
+    };
+  }
+
+  woDetail(w) {
+    const stageName = ["Scheduled", "In workshop", "Completed"][w.stage];
+    const parts = Math.round(w.cost * .62), labour = w.cost - parts;
+    return {
+      title: w.id + " · " + w.title,
+      subtitle: w.vehicle + " · " + w.due + " · " + stageName,
+      chips: [{ label: w.priority, bg: w.priority === "Critical" ? "#FBE6E6" : w.priority === "High" ? "#FDF0E2" : "#EEF1F4", fg: w.priority === "Critical" ? "#C62828" : w.priority === "High" ? "#ED6C02" : "#5F6B76" }, { label: stageName }, { label: money(w.cost) }],
+      sections: [
+        { type: "kv", title: "Work order", kv: [
+          { label: "Vehicle", value: w.vehicle }, { label: "Priority", value: w.priority },
+          { label: "Stage", value: stageName }, { label: "Schedule", value: w.due },
+          { label: "Workshop", value: "Motor Centre Manzini" }, { label: "Authorised by", value: "T. Dube · Fleet Officer" },
+        ] },
+        { type: "rows", title: "Estimate", head: ["Line", "Category", "Amount"], body: [
+          [{ v: "Parts and consumables", align: "left" }, { v: "4210 Maintenance", align: "left" }, money(parts)],
+          [{ v: "Labour (workshop rate)", align: "left" }, { v: "4210 Maintenance", align: "left" }, money(labour)],
+          [{ v: "Total estimate", align: "left", weight: "700" }, { v: "", align: "left" }, { v: money(w.cost), weight: "700" }],
+        ] },
+        { type: "note", title: "Downtime impact", text: w.stage === 2 ? "Vehicle returned to service. Cost posted to Accounting against the Logistics cost centre." : "Vehicle is unavailable for dispatch while this order is open. Trips assigned to " + w.vehicle + " must be re-allocated.", bg: w.stage === 2 ? "#E8F3E9" : "#FDF0E2", bar: w.stage === 2 ? "#2E7D32" : "#ED6C02" },
+      ],
+      actions: w.stage < 2 ? [{ label: w.stage === 0 ? "Start work" : "Complete & post cost", kind: "primary", run: this.act(() => { this.setState(s => ({ work: s.work.map(x => x.id === w.id ? { ...x, stage: x.stage + 1, due: x.stage === 1 ? "Closed 09 Aug" : x.due } : x) })); this.toast(w.id + (w.stage === 0 ? " moved into the workshop." : " completed — " + money(w.cost) + " posted to maintenance expense.")); }) }] : [],
+    };
+  }
+
+  driverDetail(d) {
+    const trips = this.state.trips.filter(t => t.driver === d.name);
+    return {
+      title: d.name,
+      subtitle: "Licence " + d.licence + " · expires " + d.expiry,
+      chips: [{ label: "Score " + d.score, bg: d.score >= 90 ? "#E8F3E9" : d.score >= 80 ? "#FDF0E2" : "#FBE6E6", fg: d.score >= 90 ? "#2E7D32" : d.score >= 80 ? "#ED6C02" : "#C62828" }, { label: d.trips + " trips" }, { label: (d.km / 1000).toFixed(1) + "k km" }],
+      sections: [
+        { type: "kv", title: "Profile", kv: [
+          { label: "Licence class", value: d.licence }, { label: "Expiry", value: d.expiry },
+          { label: "Lifetime trips", value: String(d.trips) }, { label: "Distance", value: d.km.toLocaleString() + " km" },
+          { label: "Behaviour score", value: String(d.score) }, { label: "Incidents (12m)", value: String(Math.round((100 - d.score) / 12)) },
+        ] },
+        { type: "rows", title: "Recent trips", head: ["Trip", "Route", "Distance", "Status"], body: trips.length ? trips.map(t => [{ v: t.id, align: "left" }, { v: t.from + " → " + t.to, align: "left" }, t.km + " km", { v: t.status, mono: false }]) : [[{ v: "No trips in this period", align: "left" }, "", "", ""]] },
+        { type: "note", title: "Supervisor note", text: d.note },
+      ],
+      actions: [{ label: "Suspend from dispatch", kind: "danger", run: this.act(() => this.toast(d.name + " suspended from dispatch pending review.")) }, { label: "Assign trip", kind: "primary", run: this.act(() => this.setState({ dlg: "trip", form: { from: "Mbabane HQ", driver: d.name, vehicle: this.state.vehicles[0].reg }, screen: "trips" })) }],
+    };
+  }
+
+  monthDetail(label, cost, dist) {
+    const eff = (cost * 1000 / 21.4) / (dist * 1000) * 100;
+    return {
+      title: label + " 2026 · fuel ledger",
+      subtitle: "E " + cost + "k across " + dist + "k km · " + eff.toFixed(1) + " L/100km fleet average",
+      chips: [{ label: "E " + cost + "k" }, { label: dist + "k km" }],
+      sections: [
+        { type: "kv", title: "Month summary", kv: [
+          { label: "Fuel cost", value: money(cost * 1000) }, { label: "Distance", value: (dist * 1000).toLocaleString() + " km" },
+          { label: "Litres", value: Math.round(cost * 1000 / 21.4).toLocaleString() + " L" }, { label: "Cost per km", value: "E " + (cost / dist).toFixed(2) },
+          { label: "Budget", value: money(85000) }, { label: "Variance", value: (cost * 1000 > 85000 ? "+" : "") + money(cost * 1000 - 85000), color: cost * 1000 > 85000 ? "#C62828" : "#2E7D32" },
+        ] },
+        { type: "rows", title: "Top consumers", head: ["Vehicle", "Litres", "Cost", "L/100km"], body: this.state.vehicles.slice(0, 4).map(v => [{ v: v.reg, align: "left" }, Math.round(v.eff * 38).toLocaleString(), money(v.eff * 38 * 21.4), { v: v.eff.toFixed(1), color: this.effColor(v.eff, v.target) }]) },
+      ],
+      actions: [{ label: "Export month", run: this.act(() => this.toast(label + " fuel ledger exported to CSV.")) }],
+    };
+  }
+
+  renderVals() {
+    const S = this.state, q = S.query.trim().toLowerCase();
+    const titles = { dashboard: "Command overview", fleet: "Fleet register", trips: "Trip authorisation", fuel: "Fuel transactions", cards: "Fuel card control", maintenance: "Workshop board", drivers: "Driver profiles", tracking: "Live tracking", reports: "Analytics & reporting", settings: "System configuration" };
+    const menuDef = [
+      ["dashboard", "Dashboard", "dashboard", null], ["fleet", "Fleet register", "local_shipping", null],
+      ["trips", "Trips", "route", String(S.trips.filter(t => t.status === "Pending").length)],
+      ["fuel", "Fuel log", "local_gas_station", null], ["cards", "Fuel cards", "credit_card", null],
+      ["maintenance", "Maintenance", "build", null], ["drivers", "Drivers", "badge", null],
+      ["tracking", "Live tracking", "my_location", null], ["reports", "Reports", "assessment", null], ["settings", "Settings", "settings", null],
+    ];
+    const open = S.navOpen;
+    const totalL = S.fuel.reduce((a, f) => a + f.litres, 0);
+    const totalCost = S.fuel.reduce((a, f) => a + f.litres * f.rate, 0);
+    const exceptions = S.fuel.filter(f => f.flag === "Exception").length;
+    const chartData = [["Jan", 62, 41], ["Feb", 71, 47], ["Mar", 68, 44], ["Apr", 80, 52], ["May", 74, 49], ["Jun", 88, 55], ["Jul", 83, 58], ["Aug", 46, 31]];
+    const maxC = 92;
+
+    const vehByReg = r => S.vehicles.find(v => v.reg === r) || {};
+    const sel = S.sel != null ? S.vehicles[S.sel] : null;
+
+    const statusColor = st => st === "On trip" ? "#0F4C81" : st === "Available" ? "#2E7D32" : st === "Workshop" ? "#ED6C02" : "#C62828";
+    const statusBg = st => st === "On trip" ? "#E4EEF6" : st === "Available" ? "#E8F3E9" : st === "Workshop" ? "#FDF0E2" : "#FBE6E6";
+
+    let fleetSrc = S.vehicles.map((v, i) => ({ v, i }));
+    if (S.status !== "All") fleetSrc = fleetSrc.filter(x => x.v.status === S.status);
+    if (q) fleetSrc = fleetSrc.filter(x => (x.v.reg + x.v.model + x.v.driver + x.v.dept).toLowerCase().includes(q));
+
+    const dlgSpecs = {
+      trip: {
+        title: "New trip request", cta: "Submit for approval",
+        fields: [
+          { key: "from", label: "Origin", type: "select", options: ["Mbabane HQ", "Manzini Depot", "Stores", "Lobamba"], def: "Mbabane HQ" },
+          { key: "to", label: "Destination", type: "input", hint: "e.g. Siteki Clinic", def: "" },
+          { key: "vehicle", label: "Vehicle", type: "select", options: S.vehicles.map(v => v.reg), def: "" },
+          { key: "driver", label: "Driver", type: "select", options: S.drivers.map(d => d.name), def: "" },
+          { key: "km", label: "Estimated distance (km)", type: "input", hint: "0", def: "" },
+          { key: "purpose", label: "Purpose", type: "input", hint: "Reason for travel", def: "", span: "1 / -1" },
+        ],
+      },
+      fuel: {
+        title: "Capture fuel transaction", cta: "Post transaction",
+        fields: [
+          { key: "vehicle", label: "Vehicle", type: "select", options: S.vehicles.map(v => v.reg), def: "" },
+          { key: "station", label: "Station", type: "select", options: ["Total Mbabane", "Galp Manzini", "Puma Matsapha", "Engen Siteki", "Engen Nhlangano"], def: "Total Mbabane" },
+          { key: "litres", label: "Litres dispensed", type: "input", hint: "0.0", def: "" },
+          { key: "rate", label: "Price per litre (E)", type: "input", hint: "21.40", def: "21.40" },
+          { key: "odo", label: "Odometer reading (km)", type: "input", hint: "0", def: "" },
+          { key: "card", label: "Fuel card", type: "select", options: S.cards.map(c => c.number.slice(-4)).map(n => "•••• " + n), def: "" },
+        ],
+      },
+      vehicle: {
+        title: "Register vehicle", cta: "Add to fleet",
+        fields: [
+          { key: "reg", label: "Registration", type: "input", hint: "SD 000 XX", def: "" },
+          { key: "model", label: "Make & model", type: "input", hint: "Toyota Hilux 2.4 D4D", def: "" },
+          { key: "dept", label: "Assigned department", type: "select", options: ["Field Operations", "Logistics", "Executive", "Procurement", "Stores", "Staff Transport", "IT Department"], def: "Field Operations" },
+          { key: "driver", label: "Default driver", type: "select", options: ["Unassigned"].concat(S.drivers.map(d => d.name)), def: "Unassigned" },
+          { key: "tank", label: "Tank capacity (L)", type: "input", hint: "80", def: "" },
+          { key: "target", label: "Target L/100km", type: "input", hint: "9.5", def: "" },
+        ],
+      },
+    };
+    const spec = S.dlg ? dlgSpecs[S.dlg] : null;
+    let dlgSummary = "";
+    if (S.dlg === "fuel") {
+      const l = parseFloat(S.form.litres), r = parseFloat(S.form.rate);
+      if (l > 0 && r > 0) {
+        const v = vehByReg(S.form.vehicle);
+        const over = v.tank && l > v.tank;
+        dlgSummary = "Transaction value " + money(l * r) + " for " + l.toFixed(1) + " L." + (over ? "  ⚠ Litres exceed the " + v.tank + " L tank capacity of " + v.reg + " — this will post as an exception for investigation." : "  Within tank capacity; will post to the GL fuel account on nightly verification.");
+      }
+    }
+    if (S.dlg === "trip") {
+      const km = parseFloat(S.form.km);
+      const v = vehByReg(S.form.vehicle);
+      if (km > 0 && v.eff) dlgSummary = "Projected consumption " + (km * v.eff / 100).toFixed(1) + " L · estimated fuel cost " + money(km * v.eff / 100 * 21.4) + " at the current pump price. Budget is charged to " + (v.dept || "the assigned department") + ".";
+    }
+
+    const reportSets = {
+      "Fuel consumption by vehicle": {
+        head: ["Vehicle", "Litres", "Distance (km)", "L/100km"],
+        rows: S.vehicles.slice(0, 6).map(v => ({ a: v.reg + " · " + v.model, b: Math.round(v.eff * 42).toLocaleString(), c: (4200).toLocaleString(), d: v.eff.toFixed(1), dColor: this.effColor(v.eff, v.target) })),
+        total: { a: "Fleet total", b: Math.round(S.vehicles.slice(0, 6).reduce((a, v) => a + v.eff * 42, 0)).toLocaleString(), c: "25 200", d: "13.1" },
+      },
+      "Cost per kilometre by department": {
+        head: ["Department", "Distance (km)", "Fuel cost", "E / km"],
+        rows: [["Field Operations", 8420, 18240], ["Logistics", 11200, 31480], ["Executive", 3100, 8940], ["Staff Transport", 5600, 12310], ["Stores", 2400, 5120], ["Procurement", 1800, 3260]].map(r => ({ a: r[0], b: r[1].toLocaleString(), c: money(r[2]), d: (r[2] / r[1]).toFixed(2), dColor: r[2] / r[1] > 2.8 ? "#C62828" : "#2E7D32" })),
+        total: { a: "All departments", b: "32 520", c: money(79350), d: "2.44" },
+      },
+      "Driver behaviour summary": {
+        head: ["Driver", "Trips", "Harsh events", "Score"],
+        rows: S.drivers.map(d => ({ a: d.name, b: String(d.trips), c: String(Math.round((100 - d.score) / 2)), d: String(d.score), dColor: d.score >= 90 ? "#2E7D32" : d.score >= 80 ? "#ED6C02" : "#C62828" })),
+        total: { a: "Fleet average", b: "135", c: "7", d: "86" },
+      },
+      "Fuel card exception report": {
+        head: ["Card / vehicle", "Litres", "Amount", "Variance"],
+        rows: S.fuel.filter(f => f.flag !== "Verified").map(f => ({ a: f.card + " · " + f.vehicle, b: f.litres.toFixed(1), c: money(f.litres * f.rate), d: f.flag === "Exception" ? "+" + Math.round(f.litres * .18) + " L" : "pending", dColor: f.flag === "Exception" ? "#C62828" : "#ED6C02" })),
+        total: { a: "Exposure", b: "—", c: money(S.fuel.filter(f => f.flag !== "Verified").reduce((a, f) => a + f.litres * f.rate, 0)), d: "under review" },
+      },
+    };
+    const rep = reportSets[S.reportType];
+
+    const stages = [{ title: "Scheduled", color: "#5F6B76" }, { title: "In workshop", color: "#ED6C02" }, { title: "Completed", color: "#2E7D32" }];
+
+    return {
+      screenTitle: titles[S.screen], query: S.query, alertCount: String(exceptions + 2),
+      onQuery: e => this.setState({ query: e.target.value }),
+      toggleNav: () => this.setState(s => ({ navOpen: !s.navOpen })),
+      openAlerts: () => { this.go("dashboard"); this.toast(exceptions + " fuel exceptions and 2 overdue services need attention."); },
+      navWidth: open ? "232px" : (S.narrow ? "0px" : "56px"),
+      navPos: S.narrow ? "absolute" : "relative",
+      navShadow: S.narrow && open ? "2px 0 10px rgba(0,0,0,.4)" : "none",
+      scrimOn: S.narrow && open,
+      syncedAt: "09 Aug 07:5" + (S.tick % 10),
+      menu: menuDef.map(([k, label, icon, badge]) => ({
+        label, icon, badge, go: () => this.go(k),
+        bg: S.screen === k ? "#0B2C48" : "transparent",
+        fg: S.screen === k ? "#fff" : "#CFDCE8",
+        bar: S.screen === k ? "#FF6D00" : "transparent",
+        textOp: open ? 1 : 0,
+      })),
+
+      isDashboard: S.screen === "dashboard", isFleet: S.screen === "fleet", isTrips: S.screen === "trips",
+      isFuel: S.screen === "fuel", isCards: S.screen === "cards", isMaint: S.screen === "maintenance",
+      isDrivers: S.screen === "drivers", isTracking: S.screen === "tracking", isReports: S.screen === "reports", isSettings: S.screen === "settings",
+
+      kpis: [
+        { label: "Fuel spend MTD", value: money(totalCost), delta: "▼ 6.2% vs. last month", deltaColor: "#2E7D32", color: "#0F4C81", icon: "payments" },
+        { label: "Litres dispensed", value: totalL.toFixed(0) + " L", delta: "▲ 3.1% vs. last month", deltaColor: "#C62828", color: "#FF6D00", icon: "local_gas_station" },
+        { label: "Fleet availability", value: S.vehicles.filter(v => v.status !== "Grounded" && v.status !== "Workshop").length + " / " + S.vehicles.length, delta: "2 units off the road", deltaColor: "#5F6B76", color: "#2E7D32", icon: "check_circle" },
+        { label: "Open exceptions", value: String(exceptions), delta: "Requires fleet officer review", deltaColor: "#C62828", color: "#C62828", icon: "report" },
+      ],
+      chart: chartData.map(([label, c, d]) => ({
+        label, label2: String(c), h: Math.round(c / maxC * 100) + "%", h2: Math.round(d / 60 * 100) + "%",
+        bg: label === "Aug" ? "#FF6D00" : "#0F4C81",
+        pick: () => this.openDetail(this.monthDetail(label, c, d)),
+      })),
+      alerts: [
+        { title: "SD 620 HM burning 51% above target", body: "15.7 L/100km against a 10.4 target over 1 400 km. Injector diagnostics raised as WO-1184.", color: "#C62828", cta: "Ground", act: () => { this.go("maintenance"); this.toast("SD 620 HM already grounded — WO-1184 escalated to Critical."); } },
+        { title: "Tank overfill on card •••• 4417", body: "118.9 L dispensed into a 200 L tank 4 hours after the previous fill. Possible siphoning.", color: "#C62828", cta: "Review", act: () => { this.go("fuel"); this.toast("Filtered the fuel ledger to card •••• 4417 exceptions."); } },
+        { title: "Bheki Ndlovu licence expires in 30 days", body: "Renewal reminder issued. Driver blocked from dispatch after 09 Sep 2026.", color: "#ED6C02", cta: "Open", act: () => this.go("drivers") },
+        { title: "Pump price change effective 12 Aug", body: "Diesel moves E 21.40 → E 22.15. Budget impact E 4 180 per month at current volumes.", color: "#0F4C81", cta: "Accept", act: () => this.toast("New pump price staged for 12 Aug and pushed to Accounting.") },
+      ].map(a => ({ ...a, open: () => this.openDetail({ title: a.title, subtitle: "Exception raised 09 Aug 2026 · fleet control", chips: [{ label: a.cta === "Ground" ? "Critical" : a.cta === "Review" ? "Investigate" : "Information", bg: a.color === "#C62828" ? "#FBE6E6" : a.color === "#ED6C02" ? "#FDF0E2" : "#E4EEF6", fg: a.color }], sections: [{ type: "note", title: "What the system detected", text: a.body, bg: a.color === "#C62828" ? "#FBE6E6" : "#F1F5F8", bar: a.color }, { type: "kv", title: "Handling", kv: [{ label: "Raised", value: "09 Aug 2026 07:12" }, { label: "Owner", value: "T. Dube · Fleet Officer" }, { label: "SLA", value: "24 hours" }, { label: "Escalation", value: "Head of Logistics" }] }], actions: [{ label: a.cta, kind: "primary", run: this.act(a.act) }] }) })),
+      goFleet: () => this.go("fleet"),
+      league: [...S.vehicles].sort((a, b) => (b.eff / b.target) - (a.eff / a.target)).slice(0, 6).map(v => {
+        const varPct = (v.eff - v.target) / v.target * 100;
+        return {
+          reg: v.reg, model: v.model, driver: v.driver, eff: v.eff.toFixed(1),
+          variance: (varPct >= 0 ? "+" : "") + varPct.toFixed(1) + "%",
+          varColor: this.effColor(v.eff, v.target),
+          barW: Math.min(100, Math.abs(varPct) * 4 + 12) + "%",
+          open: () => { this.setState({ sel: S.vehicles.indexOf(v), vehTab: 0 }); },
+        };
+      }),
+
+      statusFilters: ["All", "Available", "On trip", "Workshop", "Grounded"].map(l => ({
+        label: l, pick: () => this.setState({ status: l }),
+        bg: S.status === l ? "#0F4C81" : "#fff", fg: S.status === l ? "#fff" : "#16202A", bd: S.status === l ? "#0F4C81" : "#C3CAD1",
+      })),
+      openVehicleDlg: () => this.setState({ dlg: "vehicle", form: { dept: "Field Operations", driver: "Unassigned" } }),
+      fleetCards: fleetSrc.map(({ v, i }) => ({
+        reg: v.reg, model: v.model, dept: v.dept, driver: v.driver, status: v.status, icon: v.icon,
+        odo: v.odo.toLocaleString(), eff: v.eff.toFixed(1), nextService: v.next, fuelPct: String(v.fuelPct),
+        fuelW: v.fuelPct + "%", fuelColor: v.fuelPct < 25 ? "#C62828" : v.fuelPct < 50 ? "#ED6C02" : "#2E7D32",
+        effColor: this.effColor(v.eff, v.target), statusColor: statusColor(v.status), statusBg: statusBg(v.status),
+        open: () => this.setState({ sel: i, vehTab: 0 }),
+      })),
+
+      tripCountLabel: S.trips.length + " trips · " + S.trips.filter(t => t.status === "Pending").length + " awaiting authorisation",
+      openTripDlg: () => this.setState({ dlg: "trip", form: { from: "Mbabane HQ", vehicle: (S.vehicles.filter(v => v.status === "Available")[0] || S.vehicles[0]).reg, driver: S.drivers[0].name } }),
+      tripRows: S.trips.filter(t => !q || (t.id + t.from + t.to + t.vehicle + t.driver).toLowerCase().includes(q)).map((t, i) => ({
+        id: t.id, date: t.date, route: t.from + " → " + t.to, purpose: t.purpose, vehicle: t.vehicle, driver: t.driver,
+        distance: String(t.km), cost: t.cost ? money(t.cost) : "—", status: t.status,
+        statusColor: t.status === "Completed" ? "#2E7D32" : t.status === "In progress" ? "#0F4C81" : "#ED6C02",
+        statusBg: t.status === "Completed" ? "#E8F3E9" : t.status === "In progress" ? "#E4EEF6" : "#FDF0E2",
+        canApprove: t.status === "Pending", canClose: t.status === "In progress",
+        open: () => this.openDetail(this.tripDetail(t)),
+        approve: e => { if (e && e.stopPropagation) e.stopPropagation(); this.setState(s => ({ trips: s.trips.map(x => x.id === t.id ? { ...x, status: "In progress" } : x) })); this.toast(t.id + " authorised. Fuel card " + t.vehicle + " unlocked for this route."); },
+        close: e => { if (e && e.stopPropagation) e.stopPropagation(); this.setState(s => ({ trips: s.trips.map(x => x.id === t.id ? { ...x, status: "Completed", cost: Math.round(x.km * 4.6) } : x) })); this.toast(t.id + " closed. " + money(t.km * 4.6) + " posted to the department cost centre."); },
+      })),
+
+      fuelKpis: [
+        { label: "Litres this period", value: totalL.toFixed(0) },
+        { label: "Value", value: money(totalCost) },
+        { label: "Avg price / litre", value: "E 21.58" },
+        { label: "Exceptions", value: String(exceptions) },
+      ],
+      openFuelDlg: () => this.setState({ dlg: "fuel", form: { rate: "21.40", station: "Total Mbabane", vehicle: S.vehicles[0].reg, card: "•••• " + S.cards[0].number.slice(-4) } }),
+      fuelRows: S.fuel.filter(f => !q || (f.vehicle + f.station + f.driver + f.card).toLowerCase().includes(q)).map(f => ({
+        date: f.date, vehicle: f.vehicle, driver: f.driver, station: f.station, card: f.card,
+        litres: f.litres.toFixed(1), rate: f.rate.toFixed(2), cost: money(f.litres * f.rate), odo: f.odo.toLocaleString(),
+        flag: f.flag, rowBg: f.flag === "Exception" ? "#FDF4F4" : "#fff",
+        flagColor: f.flag === "Verified" ? "#2E7D32" : f.flag === "Pending" ? "#ED6C02" : "#C62828",
+        flagBg: f.flag === "Verified" ? "#E8F3E9" : f.flag === "Pending" ? "#FDF0E2" : "#FBE6E6",
+        open: () => this.openDetail(this.fuelDetail(f)),
+      })),
+
+      cardList: S.cards.map((c, i) => {
+        const pct = c.used / c.limit * 100;
+        return {
+          number: c.number, vehicle: c.vehicle, holder: c.holder,
+          state: c.active ? "Active" : "Blocked", stateBg: c.active ? "#2E7D32" : "#C62828", stateFg: "#fff",
+          used: money(c.used), limit: money(c.limit), pctW: Math.min(100, pct) + "%",
+          pctColor: pct > 95 ? "#C62828" : pct > 75 ? "#ED6C02" : "#2E7D32",
+          btnLabel: c.active ? "Block card" : "Unblock", btnColor: c.active ? "#C62828" : "#2E7D32",
+          open: () => this.openDetail(this.cardDetail(c)),
+          toggle: () => { this.setState(s => ({ cards: s.cards.map((x, j) => j === i ? { ...x, active: !x.active } : x) })); this.toast("Card " + c.number.slice(-4) + (c.active ? " blocked at the supplier switch." : " reactivated. Limits unchanged.")); },
+          raise: () => { this.setState(s => ({ cards: s.cards.map((x, j) => j === i ? { ...x, limit: x.limit + 1000 } : x) })); this.toast("Limit increase of E 1 000 routed to Accounting for approval."); },
+        };
+      }),
+
+      maintCols: stages.map((st, si) => {
+        const items = S.work.filter(w => w.stage === si);
+        return {
+          title: st.title, color: st.color, count: items.length + " item" + (items.length === 1 ? "" : "s"),
+          items: items.map(w => ({
+            id: w.id, title: w.title, vehicle: w.vehicle, due: w.due, cost: money(w.cost), priority: w.priority,
+            prBg: w.priority === "Critical" ? "#FBE6E6" : w.priority === "High" ? "#FDF0E2" : "#EEF1F4",
+            prFg: w.priority === "Critical" ? "#C62828" : w.priority === "High" ? "#ED6C02" : "#5F6B76",
+            canAdvance: si < 2, advanceLabel: si === 0 ? "Start work" : "Complete",
+            open: () => this.openDetail(this.woDetail(w)),
+            advance: e => { if (e && e.stopPropagation) e.stopPropagation(); this.setState(s => ({ work: s.work.map(x => x.id === w.id ? { ...x, stage: x.stage + 1, due: x.stage === 1 ? "Closed 09 Aug" : x.due } : x) })); this.toast(w.id + (si === 0 ? " moved into the workshop." : " completed — " + money(w.cost) + " posted to maintenance expense.")); },
+          })),
+        };
+      }),
+
+      driverList: S.drivers.map(d => ({
+        name: d.name, licence: d.licence, expiry: d.expiry, trips: String(d.trips), km: (d.km / 1000).toFixed(1) + "k",
+        score: String(d.score), scoreW: d.score + "%",
+        scoreColor: d.score >= 90 ? "#2E7D32" : d.score >= 80 ? "#ED6C02" : "#C62828",
+        band: d.score >= 90 ? "Excellent" : d.score >= 80 ? "Acceptable" : "Coaching required",
+        note: d.note, initials: d.name.split(" ").map(x => x[0]).join(""),
+        avBg: d.score >= 90 ? "#2E7D32" : d.score >= 80 ? "#0F4C81" : "#C62828",
+        open: () => this.openDetail(this.driverDetail(d)),
+      })),
+
+      mapSpan: S.narrow ? "auto" : "span 2",
+      liveLabel: S.live ? "Live · 1s refresh" : "Paused",
+      liveBtn: S.live ? "Pause feed" : "Resume feed",
+      toggleLive: () => this.setState(s => ({ live: !s.live })),
+      pins: S.pins.map(p => ({
+        reg: p.reg, x: p.x + "%", y: p.y + "%", speed: String(p.speed),
+        color: p.speed === 0 ? "#5F6B76" : p.speed > 70 ? "#C62828" : "#0F4C81",
+        open: () => { const i = S.vehicles.findIndex(v => v.reg === p.reg); if (i >= 0) this.setState({ sel: i, vehTab: 0 }); },
+      })),
+      telemetry: [
+        { icon: "speed", color: "#C62828", title: "Over-speed event · SD 907 CM", detail: "94 km/h in an 80 zone, MR3 near Sidvokodvo", time: "07:5" + (S.tick % 6) },
+        { icon: "local_gas_station", color: "#0F4C81", title: "Refuel started · SD 412 AM", detail: "Total Mbabane · card •••• 2210", time: "07:41" },
+        { icon: "timer", color: "#ED6C02", title: "Idling 18 min · SD 044 FM", detail: "Exceeds the 15 min policy threshold", time: "07:22" },
+        { icon: "my_location", color: "#2E7D32", title: "Geo-fence entry · SD 550 EM", detail: "Arrived Piggs Peak site", time: "07:04" },
+        { icon: "route", color: "#0F4C81", title: "Route deviation · SD 118 BS", detail: "6.2 km off the authorised route", time: "06:58" },
+        { icon: "power_settings_new", color: "#5F6B76", title: "Ignition off · SD 781 GM", detail: "Stores yard, Mbabane", time: "06:30" },
+      ].map(t => ({ ...t, open: () => this.openDetail({ title: t.title, subtitle: "Telemetry event · today " + t.time, chips: [{ label: "Telematics" }], sections: [{ type: "kv", title: "Event", kv: [{ label: "Type", value: t.title.split(" · ")[0] }, { label: "Asset", value: t.title.split(" · ")[1] || "—" }, { label: "Detail", value: t.detail }, { label: "Received", value: "today " + t.time }, { label: "Source", value: "CAN-bus + GPS" }, { label: "Acknowledged", value: "No", color: "#C62828" }] }, { type: "note", title: "Policy", text: "Events of this class are retained for 24 months and feed the driver behaviour score. Three unacknowledged events escalate to the Head of Logistics." }], actions: [{ label: "Acknowledge", kind: "primary", run: this.act(() => this.toast("Event acknowledged and logged against the driver record.")) }] }) })),
+
+      reportType: S.reportType, reportPeriod: S.reportPeriod, reportStamp: S.reportStamp,
+      onReportType: e => this.setState({ reportType: e.target.value }),
+      onReportPeriod: e => this.setState({ reportPeriod: e.target.value }),
+      runReport: () => { this.setState({ reportStamp: "09 Aug 2026 " + pad(new Date().getHours()) + ":" + pad(new Date().getMinutes()) }); this.toast("Report regenerated from the live ledger."); },
+      exportReport: () => this.toast("CSV queued — delivered to the Accounting shared folder and your inbox."),
+      reportHead: rep.head.map((label, i) => ({ label, align: i === 0 ? "left" : "right" })),
+      reportRows: rep.rows, reportTotal: rep.total,
+
+      toggles: S.policy.map((p, i) => ({
+        label: p.label, desc: p.desc,
+        trackBg: p.on ? "#9DC3E0" : "#C3CAD1", knobBg: p.on ? "#0F4C81" : "#F5F7F9", knobX: p.on ? "16px" : "0px",
+        flip: () => { this.setState(s => ({ policy: s.policy.map((x, j) => j === i ? { ...x, on: !x.on } : x) })); this.toast(p.label + (p.on ? " disabled." : " enabled.") + " Policy pushed to all driver devices."); },
+      })),
+      sliders: [
+        { key: "variance", label: "Consumption variance alert", min: "5", max: "30", step: "1", value: String(S.thresh.variance), display: S.thresh.variance + "%", desc: "Raise an exception when a vehicle exceeds its target by this margin." },
+        { key: "idle", label: "Maximum idling", min: "5", max: "60", step: "5", value: String(S.thresh.idle), display: S.thresh.idle + " min", desc: "Engine running while stationary before a telemetry alert is sent." },
+        { key: "price", label: "Pump price ceiling", min: "18", max: "30", step: "0.5", value: String(S.thresh.price), display: "E " + S.thresh.price.toFixed(2), desc: "Transactions above this rate require fleet officer sign-off." },
+      ].map(s => ({ ...s, set: e => this.setState(st => ({ thresh: { ...st.thresh, [s.key]: parseFloat(e.target.value) } })) })),
+      integrations: [
+        { icon: "account_balance", name: "Accounting Management System", detail: "Fuel & maintenance postings to the GL", state: "Connected", bg: "#E8F3E9", fg: "#2E7D32" },
+        { icon: "shopping_cart", name: "Procurement module", detail: "Supplier contracts and fuel tenders", state: "Connected", bg: "#E8F3E9", fg: "#2E7D32" },
+        { icon: "smartphone", name: "Data collector tracking", detail: "Live location of field smart phones", state: "Connected", bg: "#E8F3E9", fg: "#2E7D32" },
+        { icon: "sensors", name: "Telematics provider feed", detail: "CAN-bus + GPS, 30 devices licensed", state: "Degraded", bg: "#FDF0E2", fg: "#ED6C02" },
+        { icon: "badge", name: "HR information system", detail: "Driver records and licence validity", state: "Connected", bg: "#E8F3E9", fg: "#2E7D32" },
+      ].map(i => ({ ...i, open: () => this.openDetail({ title: i.name, subtitle: i.detail + " · " + i.state, chips: [{ label: i.state, bg: i.bg, fg: i.fg }], sections: [{ type: "kv", title: "Interface", kv: [{ label: "Direction", value: "Bi-directional" }, { label: "Protocol", value: "REST / JSON over TLS" }, { label: "Frequency", value: i.state === "Degraded" ? "Retrying every 5 min" : "Nightly 23:00 + on demand" }, { label: "Last success", value: i.state === "Degraded" ? "08 Aug 22:14" : "09 Aug 07:41" }, { label: "Records today", value: i.state === "Degraded" ? "0" : "1 284" }, { label: "Owner", value: "IT Department" }] }, { type: "note", title: i.state === "Degraded" ? "Incident" : "Health", text: i.state === "Degraded" ? "Four of thirty telematics devices have not reported since 08 Aug 22:14. Live positions for those vehicles are stale. Ticket INC-2214 raised with the provider." : "Interface healthy. No failed batches in the last seven days.", bg: i.state === "Degraded" ? "#FDF0E2" : "#E8F3E9", bar: i.state === "Degraded" ? "#ED6C02" : "#2E7D32" }], actions: [{ label: "Run sync now", kind: "primary", run: this.act(() => this.toast(i.name + " sync triggered manually.")) }] }) })),
+
+      vehicleOpen: !!sel, sel: sel || {},
+      closeVehicle: () => this.setState({ sel: null }),
+      vehTabs: ["Overview", "Fuel history", "Timeline"].map((label, i) => ({
+        label, pick: () => this.setState({ vehTab: i }),
+        bar: S.vehTab === i ? "#0F4C81" : "transparent", fg: S.vehTab === i ? "#0F4C81" : "#5F6B76",
+      })),
+      vehTab0: S.vehTab === 0, vehTab1: S.vehTab === 1, vehTab2: S.vehTab === 2,
+      selSpecs: sel ? [
+        { label: "Status", value: sel.status }, { label: "Odometer", value: sel.odo.toLocaleString() + " km" },
+        { label: "Tank", value: sel.tank + " L" }, { label: "Level", value: sel.fuelPct + "%" },
+        { label: "Actual L/100km", value: sel.eff.toFixed(1) }, { label: "Target L/100km", value: sel.target.toFixed(1) },
+        { label: "Driver", value: sel.driver }, { label: "Next service", value: sel.next },
+      ] : [],
+      selTrend: sel ? ["M", "A", "M", "J", "J", "A", "S", "O"].map((label, i) => {
+        const val = sel.eff * (0.86 + ((i * 7 + sel.reg.length) % 9) / 30);
+        return { label, h: Math.round(val / (sel.eff * 1.3) * 100) + "%", bg: val > sel.target ? "#ED6C02" : "#0F4C81" };
+      }) : [],
+      selFuel: sel ? S.fuel.filter(f => f.vehicle === sel.reg).map(f => ({ station: f.station, date: f.date, litres: f.litres.toFixed(1), cost: money(f.litres * f.rate) })) : [],
+      selHistory: sel ? [
+        { title: "Trip closed · Manzini Depot", detail: "09 Aug 2026 · 42 km · " + sel.driver, color: "#0F4C81" },
+        { title: "Fuel captured", detail: "09 Aug 2026 · 48.2 L · Total Mbabane", color: "#FF6D00" },
+        { title: "Service completed", detail: "12 Jun 2026 · 30 000 km interval · E 3 800", color: "#2E7D32" },
+        { title: "Assigned to " + sel.dept, detail: "04 Mar 2026 · Fleet officer approval", color: "#5F6B76" },
+      ] : [],
+      dispatchSel: () => { this.setState({ dlg: "trip", form: { from: "Mbabane HQ", vehicle: sel.reg, driver: sel.driver === "Unassigned" ? S.drivers[0].name : sel.driver }, sel: null }); },
+
+      dlgOpen: !!S.dlg, dlgTitle: spec ? spec.title : "", dlgCta: spec ? spec.cta : "", dlgSummary,
+      dlgFields: spec ? spec.fields.map(f => ({
+        label: f.label, hint: f.hint || "", span: f.span || "auto",
+        isSelect: f.type === "select", isInput: f.type !== "select",
+        options: f.options || [], value: S.form[f.key] !== undefined && S.form[f.key] !== "" ? S.form[f.key] : (f.def || (f.type === "select" ? (f.options || [])[0] || "" : "")),
+        help: "", helpColor: "#5F6B76",
+        set: e => this.setForm(f.key, e.target.value),
+      })) : [],
+      closeDlg: () => this.setState({ dlg: null, form: {} }),
+      submitDlg: () => {
+        const F = S.form;
+        if (S.dlg === "trip") {
+          if (!F.to || !F.vehicle) { this.toast("Destination and vehicle are required."); return; }
+          const id = "TRP-" + (2610 + S.vehicleSeq);
+          this.setState(s => ({
+            trips: [{ id, date: "09 Aug 2026", from: F.from || "Mbabane HQ", to: F.to, vehicle: F.vehicle, driver: F.driver || "Unassigned", km: parseFloat(F.km) || 0, purpose: F.purpose || "Official duty", status: "Pending", cost: 0 }, ...s.trips],
+            dlg: null, form: {}, screen: "trips", vehicleSeq: s.vehicleSeq + 1,
+          }));
+          this.toast(id + " created and routed to the Transport Officer for authorisation.");
+        } else if (S.dlg === "fuel") {
+          const l = parseFloat(F.litres), r = parseFloat(F.rate);
+          if (!F.vehicle || !(l > 0)) { this.toast("Vehicle and litres are required."); return; }
+          const v = vehByReg(F.vehicle);
+          const flag = v.tank && l > v.tank ? "Exception" : "Pending";
+          this.setState(s => ({
+            fuel: [{ date: "09 Aug", vehicle: F.vehicle, driver: v.driver || "Unassigned", station: F.station, card: F.card || "•••• 0000", litres: l, rate: r || 21.4, odo: parseInt(F.odo) || v.odo || 0, flag }, ...s.fuel],
+            dlg: null, form: {}, screen: "fuel",
+          }));
+          this.toast(flag === "Exception" ? "Posted as an EXCEPTION — litres exceed tank capacity." : "Fuel transaction posted. Awaiting supplier feed reconciliation.");
+        } else if (S.dlg === "vehicle") {
+          if (!F.reg || !F.model) { this.toast("Registration and model are required."); return; }
+          this.setState(s => ({
+            vehicles: [...s.vehicles, { reg: F.reg, model: F.model, type: "pickup", icon: "local_shipping", dept: F.dept, driver: F.driver, status: "Available", odo: 0, fuelPct: 100, eff: parseFloat(F.target) || 10, target: parseFloat(F.target) || 10, next: "On first 5 000 km", tank: parseInt(F.tank) || 80 }],
+            dlg: null, form: {}, screen: "fleet",
+          }));
+          this.toast(F.reg + " registered. Fuel card issuance request sent to Accounting.");
+        }
+      },
+
+      detailOpen: !!S.detail, detail: this.normDetail(S.detail), closeDetail: () => this.setState({ detail: null }),
+      snack: S.snack, clearSnack: () => this.setState({ snack: "" }),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

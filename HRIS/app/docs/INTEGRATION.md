@@ -57,6 +57,8 @@ never by deleting history.
 | `payroll` | — | ✅ | ✅ mark paid | — |
 | `certifications` | — | ✅ | — | — |
 | `devices` | — | ✅ | — | — |
+| `audit` | ✅ | — | — | — |
+| `identity` | ✅ | — | — | — |
 
 Each granted cell becomes one `category:action` scope string under the hood (e.g. `timesheets:create`)
 — the endpoint reference below groups by category and tells you which action each one needs.
@@ -67,9 +69,14 @@ These are starting points, not a fixed rule — an admin can grant any combinati
 
 | System | Recommended access | Why |
 |---|---|---|
-| Smartphone tracking | Employees: R · Devices: R · Timesheets: CRU | Match a tracked device to a person; push clock-in/out events from the device (`timesheets:create`/`:update`) and read history back. |
+| Smartphone tracking (SPTS) | Employees: R · Devices: R · Timesheets: CRU · Org: R · Audit: C · MFA: R+C · Identity: C | Match a tracked device to a person; push clock-in/out events (`timesheets:create`/`:update`) and read history back; sync org units for department-scoped display; log SPTS's own privileged actions into the shared audit trail; and — since SPTS keeps no local password or MFA state of its own — delegate login, lockout, and second-factor entirely to the HRIS via `identity:create`/`mfa:read`/`mfa:create`. |
 | Accounting | Employees: R · Timesheets: R · Org: R · Payroll: RU | Cost allocation by department/cost centre, payroll GL posting from run/line totals, and confirming back once a run is actually disbursed — never bank or tax details. |
 | Fleet / logistics | Employees: R · Timesheets: R · Leave: R · Certifications: R · Org: R | Don't roster someone who's on leave or whose driving/safety certification has lapsed; route by duty station. Grant Timesheets: CU too if the fleet system itself captures clock events via vehicle logs (`source: "vehicle_log"`). |
+
+The Integrations page (below) has a **preset button per named system** that pre-checks exactly
+these matrices for you — use a preset as the starting point and adjust from there, rather than
+hand-picking scopes from scratch and risking a gap like the one that prompted this table's update
+(a live SPTS key was missing `identity:create` because it was granted before that scope existed).
 
 Payroll's Update cell is deliberately not suggested for smartphone tracking or fleet/logistics —
 neither has a legitimate reason to touch payroll state, so there's no reason to grant it even
@@ -139,6 +146,12 @@ Query parameters (all optional):
 - `updated_since` — ISO 8601 timestamp; only returns people whose record changed after this time,
   for incremental sync instead of pulling the full list every time.
 
+The field set was deliberately widened (a later, explicit decision) to cover most of what a
+consuming system's own UI would want to render for a person — name variants, contact details, a
+profile photo, org placement, grade, line manager. **The privacy boundary did not move**: national
+ID, date of birth, next-of-kin, home address, marital status, and bank/tax details are still never
+returned by this API at any scope — see "What is deliberately NOT exposed" below.
+
 Example response:
 
 ```json
@@ -147,17 +160,42 @@ Example response:
     {
       "employee_no": "NRU-0009",
       "full_legal_name": "Andile Ngwenya",
+      "preferred_name": "Andile",
       "email": "employee@nru.org",
+      "phone": "+268 241009",
+      "gender": "Male",
+      "photo_url": "/api/v1/integration/employees/NRU-0009/photo",
       "status": "active",
       "updated_at": "2026-08-23 22:50:25",
       "position_title": "Field Enumerator",
       "contract_type": "permanent",
       "start_date": "2023-01-16",
-      "department": "Field Operations"
+      "grade": "G4",
+      "duty_station": "Manzini",
+      "reports_to_employee_no": "NRU-0005",
+      "department": "Field Operations",
+      "role_name": null,
+      "has_login": false
     }
   ]
 }
 ```
+
+`photo_url` is a link back to this same API (not the internal `/uploads` path, which requires a
+browser session) — `null` if the person has no photo on file. `role_name` is that employee's HRIS
+role (`HR administrator`, `Head of Department`, `Employee`, etc.) if they have an HRIS login,
+`null` if they don't; `has_login` is a plain boolean for the same thing without needing to check
+`role_name` for null. This is the intended way for a consuming system to derive its OWN
+permissions from a real, single, shared role — see "identity" below for why this matters: an
+integrating system should map its access off `role_name`, not keep a parallel role of its own for
+the same person. Fetch a photo directly with the same bearer token:
+
+### `GET /api/v1/integration/employees/:employeeNo/photo`
+
+Scope required: `employees:read`. Streams the decrypted image bytes with the correct
+`Content-Type`. `404` if the employee has no photo, or if a `photo_url` value on record has no
+file behind it (never expected in normal operation, but this endpoint doesn't crash on it — the
+uploads directory can be re-populated without the row referencing it going stale in the API).
 
 ### `GET /api/v1/integration/employees/:employeeNo/timesheets`
 
@@ -251,6 +289,54 @@ dispatch.
 Scope required: `devices:read`. `extension`, `status`, `device_assigned` (and, org-wide,
 `full_legal_name`/`department`) — enough to correlate a tracked device back to a person. SIP
 credentials, voicemail PIN, and emergency/forwarding numbers are never returned here.
+
+### `POST /api/v1/integration/audit-events`
+
+Scope required: `audit:create`. Write-only — no corresponding read endpoint; a key with this scope
+cannot see audit history, only add to it. Lets an integrating system push its own privileged-action
+log into the HRIS's central audit trail, so "who did what, when" is answerable from one place
+across systems instead of split across each system's own log — e.g. the smartphone tracking system
+recording that a supervisor granted a geofence check-in override.
+
+Body:
+```json
+{
+  "action": "checkin.override.granted",
+  "entity_type": "check_in",
+  "entity_id": "2",
+  "actor_employee_no": "NRU-0001",
+  "note": "79820m outside Matsapha depot"
+}
+```
+`action` and `entity_type` are required (free text, the calling system's own vocabulary —
+`entity_type` is stored exactly as given, not prefixed with the consumer name, since the
+`consumer` column already attributes the row to the calling system). `entity_id`,
+`actor_employee_no` and `note` are optional; `actor_employee_no` is only recorded if it matches a
+real person, otherwise the row is still written with a null actor rather than rejected. Every row
+is stamped with the calling key's name in the `consumer` column, exactly like the automatic
+export-audit rows every read endpoint above already writes — visible under **Audit trail** in the
+HRIS sidebar (HR/System administrators only) alongside every human action in the app.
+
+### `POST /api/v1/integration/auth/verify-login`
+
+Scope required: `identity:create`. Lets another system's own login form check an email+password
+against the HRIS's account instead of keeping a separate password of its own — the HRIS is the
+ecosystem's single account, not a template every app copies. Reuses the exact same check and
+lockout counters (`app_user.failed_attempts`/`locked_until`) as the browser login route: a
+brute-force attempt through the other system's sign-in page locks the account out of the HRIS's
+own login too, and vice versa. The password and its hash never leave this endpoint — only a
+valid/invalid answer, plus `employee_no` on success, crosses the API boundary.
+
+Body: `{ "email": "employee@nru.org", "password": "..." }`
+
+Response (success): `{ "data": { "valid": true, "employee_no": "NRU-0009", "full_legal_name": "Andile Ngwenya" } }`
+Response (bad credentials or no such account — deliberately identical, no user enumeration):
+`{ "data": { "valid": false, "locked": false } }`
+Response (locked out): `{ "data": { "valid": false, "locked": true, "minutes_left": 12 } }`
+
+A system using this should still combine it with `mfa-status`/`mfa/verify` above for a full sign-in
+(password first, then the second factor if the employee has one enrolled) — exactly how the HRIS's
+own login route sequences the two internally.
 
 ## Two-way payroll (accounting write-back)
 

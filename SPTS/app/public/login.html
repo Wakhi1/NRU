@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sign in — SPTS</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo" id="auth-logo"><span class="mark">NRU</span></div>
+    <div class="auth-title">SPTS</div>
+    <div class="auth-sub" id="auth-sub">Smart Phone Tracking &amp; Data Collection Monitoring · sign in to continue</div>
+
+    <form id="login-form">
+      <div class="form-row">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="username" required />
+      </div>
+      <div class="form-row">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required />
+      </div>
+      <div class="field-error" id="login-error" style="display:none"></div>
+      <button class="btn btn-primary" type="submit" style="width:100%;justify-content:center" id="login-btn">Sign in</button>
+    </form>
+
+    <form id="mfa-form" style="display:none">
+      <p class="field-hint" id="mfa-hris-note" style="display:none;margin-bottom:10px;">Verifying against your organisation's HRIS authenticator — use the same app/code you use to sign in there.</p>
+      <div class="pill-tabs" id="mfa-method-tabs" style="margin-bottom:14px"></div>
+      <div id="mfa-totp-panel" style="display:none">
+        <div class="form-row">
+          <label for="mfa-code">Code from your authenticator app</label>
+          <input id="mfa-code" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" maxlength="6" />
+        </div>
+      </div>
+      <div id="mfa-email-panel" style="display:none">
+        <div class="field-hint" id="mfa-email-hint" style="margin-bottom:8px">We'll email a 6-digit code.</div>
+        <button type="button" class="btn btn-ghost btn-sm" id="mfa-send-email-btn" style="margin-bottom:12px">Send code</button>
+        <div class="form-row">
+          <label for="mfa-email-code">Code from your email</label>
+          <input id="mfa-email-code" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" maxlength="6" />
+        </div>
+      </div>
+      <div id="mfa-backup-panel" style="display:none">
+        <div class="field-hint" style="margin-bottom:8px">Enter one of your unused backup codes.</div>
+        <div class="form-row">
+          <label for="mfa-backup-code">Backup code</label>
+          <input id="mfa-backup-code" autocomplete="off" placeholder="XXXX-XXXX" style="text-transform:uppercase" />
+        </div>
+      </div>
+      <div class="field-error" id="mfa-error" style="display:none"></div>
+      <button class="btn btn-primary" type="submit" style="width:100%;justify-content:center" id="mfa-verify-btn">Verify</button>
+      <button class="btn btn-ghost btn-sm" type="button" id="mfa-use-backup-btn" style="width:100%;justify-content:center;margin-top:8px">Use a backup code instead</button>
+      <button class="btn btn-ghost btn-sm" type="button" id="mfa-cancel-btn" style="width:100%;justify-content:center;margin-top:4px">Cancel, start over</button>
+    </form>
+
+    <div class="demo-logins" id="demo-logins-note">
+      <strong>HRIS logins</strong> (password: <code>Passw0rd!</code>) — sign-in is delegated entirely to the HRIS, so only employees with an HRIS account can sign in here:<br />
+      sysadmin@nru.org · hr.admin@nru.org · finance.hod@nru.org · data.crm@nru.org · partner@nru.org · employee@nru.org
+    </div>
+  </div>
+</div>
+<script src="/js/api.js"></script>
+<script>
+  Api.get('/branding').then(({ data }) => {
+    if (data.logo_url) document.getElementById('auth-logo').innerHTML = `<img src="${data.logo_url}" alt="${data.org_name}" style="height:44px;width:auto;display:block;">`;
+    document.getElementById('auth-sub').textContent = `Smart Phone Tracking & Data Collection Monitoring · ${data.org_name}`;
+    if (data.favicon_url) { const l = document.createElement('link'); l.rel = 'icon'; l.href = data.favicon_url; document.head.appendChild(l); }
+  }).catch(() => {});
+
+  const loginForm = document.getElementById('login-form');
+  const mfaForm = document.getElementById('mfa-form');
+  const loginError = document.getElementById('login-error');
+  const mfaError = document.getElementById('mfa-error');
+  const loginBtn = document.getElementById('login-btn');
+  const mfaVerifyBtn = document.getElementById('mfa-verify-btn');
+  let activeMethod = null;
+
+  function goNext() {
+    const params = new URLSearchParams(location.search);
+    location.href = params.get('next') || '/myshift.html';
+  }
+
+  function showMethod(method) {
+    activeMethod = method;
+    document.getElementById('mfa-totp-panel').style.display = method === 'totp' ? '' : 'none';
+    document.getElementById('mfa-email-panel').style.display = method === 'email' ? '' : 'none';
+    document.getElementById('mfa-backup-panel').style.display = method === 'backup' ? '' : 'none';
+    document.getElementById('mfa-use-backup-btn').style.display = method === 'backup' ? 'none' : '';
+    document.querySelectorAll('#mfa-method-tabs .badge').forEach((b) => {
+      b.className = 'badge clickable ' + (b.dataset.method === method ? 'badge-info' : 'badge-neutral');
+    });
+  }
+
+  function enterMfaStep(methods, viaHris) {
+    loginForm.style.display = 'none';
+    document.getElementById('demo-logins-note').style.display = 'none';
+    mfaForm.style.display = '';
+    document.getElementById('mfa-hris-note').style.display = viaHris ? 'block' : 'none';
+    const tabs = document.getElementById('mfa-method-tabs');
+    const labels = { totp: 'Authenticator app', email: 'Email code' };
+    tabs.innerHTML = methods.length > 1
+      ? methods.map((m) => `<span class="badge badge-neutral clickable" data-method="${m}">${labels[m]}</span>`).join('')
+      : '';
+    tabs.querySelectorAll('[data-method]').forEach((el) => el.addEventListener('click', () => showMethod(el.dataset.method)));
+    showMethod(methods[0]);
+    (methods[0] === 'totp' ? document.getElementById('mfa-code') : document.getElementById('mfa-email-code')).focus();
+  }
+
+  document.getElementById('mfa-use-backup-btn').addEventListener('click', () => showMethod('backup'));
+  document.getElementById('mfa-cancel-btn').addEventListener('click', () => {
+    mfaForm.style.display = 'none';
+    loginForm.style.display = '';
+    document.getElementById('demo-logins-note').style.display = '';
+    document.getElementById('password').value = '';
+    mfaError.style.display = 'none';
+  });
+
+  document.getElementById('mfa-send-email-btn').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'Sending…';
+    try {
+      const res = await Api.post('/auth/login/send-email-code');
+      document.getElementById('mfa-email-hint').textContent = `Code sent to ${res.sentTo}. It expires in 10 minutes.`;
+      btn.textContent = 'Resend';
+    } catch (err) {
+      Api.toast(err.message, true);
+      btn.textContent = original;
+    } finally {
+      setTimeout(() => { btn.disabled = false; }, 5000);
+    }
+  });
+
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    loginError.style.display = 'none';
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Signing in…';
+    try {
+      const res = await Api.post('/auth/login', {
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+      });
+      if (res.mfaRequired) enterMfaStep(res.methods, res.viaHris);
+      else goNext();
+    } catch (err) {
+      loginError.textContent = err.message || 'Sign in failed';
+      loginError.style.display = 'block';
+    } finally {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign in';
+    }
+  });
+
+  mfaForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    mfaError.style.display = 'none';
+    const code = activeMethod === 'totp' ? document.getElementById('mfa-code').value.trim()
+      : activeMethod === 'email' ? document.getElementById('mfa-email-code').value.trim()
+      : document.getElementById('mfa-backup-code').value.trim();
+    if (!code) { mfaError.textContent = 'Enter a code.'; mfaError.style.display = 'block'; return; }
+
+    mfaVerifyBtn.disabled = true;
+    mfaVerifyBtn.textContent = 'Verifying…';
+    try {
+      await Api.post('/auth/login/verify', { code, method: activeMethod });
+      goNext();
+    } catch (err) {
+      mfaError.textContent = err.message || 'Verification failed';
+      mfaError.style.display = 'block';
+    } finally {
+      mfaVerifyBtn.disabled = false;
+      mfaVerifyBtn.textContent = 'Verify';
+    }
+  });
+</script>
+</body>
+</html>

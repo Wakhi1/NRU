@@ -44,6 +44,21 @@ const INTEGRATION_CATEGORIES = [
     crud: { create: false, read: true, update: false, delete: false },
     hint: 'Extension/device assigned to each employee — no credentials',
   },
+  {
+    key: 'audit', label: 'Audit trail',
+    crud: { create: true, read: false, update: false, delete: false },
+    hint: 'Write-only — lets this system log its own privileged actions into the HRIS audit trail. No read: a consumer cannot see other systems’ or HRIS’s own audit history through this key.',
+  },
+  {
+    key: 'mfa', label: 'MFA (ecosystem authenticator)',
+    crud: { create: true, read: true, update: false, delete: false },
+    hint: 'Read = whether an employee has TOTP/email-OTP enabled on the HRIS (so another app can defer to it instead of asking them to enrol twice). Create = send an email code and verify a submitted code — the raw TOTP secret itself is never returned by this API, only a valid/invalid answer.',
+  },
+  {
+    key: 'identity', label: 'Identity (login delegation)',
+    crud: { create: true, read: false, update: false, delete: false },
+    hint: 'Lets another system in the ecosystem check an email+password against the HRIS’s own app_user record instead of keeping its own copy — the HRIS is the single account: same password, same lockout counter, no matter which app the sign-in form lives on. The password itself and its hash never leave this API, only a valid/invalid answer plus the employee_no on success.',
+  },
 ];
 
 const API_SCOPES = INTEGRATION_CATEGORIES.flatMap((cat) =>
@@ -62,4 +77,25 @@ const apiKeyScopesUpdateSchema = z.object({
   scopes: scopesSchema,
 });
 
-module.exports = { INTEGRATION_CATEGORIES, API_SCOPES, apiKeyCreateSchema, apiKeyScopesUpdateSchema, scopesSchema };
+const auditEventCreateSchema = z.object({
+  action: z.string().min(1).max(60),
+  entity_type: z.string().min(1).max(60),
+  entity_id: z.string().max(60).optional().nullable(),
+  actor_employee_no: z.string().max(20).optional().nullable(),
+  note: z.string().max(500).optional().nullable(),
+});
+
+const mfaVerifyIntegrationSchema = z.object({
+  code: z.string().min(4).max(12),
+  method: z.enum(['totp', 'email', 'backup']),
+});
+
+const loginVerifyIntegrationSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+module.exports = {
+  INTEGRATION_CATEGORIES, API_SCOPES, apiKeyCreateSchema, apiKeyScopesUpdateSchema, scopesSchema,
+  auditEventCreateSchema, mfaVerifyIntegrationSchema, loginVerifyIntegrationSchema,
+};
