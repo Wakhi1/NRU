@@ -21,45 +21,47 @@
 // so System administrator covers that ground here).
 const db = require('./db');
 
+// `voice.call` rides alongside `checkin.own.submit` — granted to EVERY role for the same reason
+// (architecture doc §8: one extension per person, org-wide, not a console-only capability).
 const DEFAULT_PERMISSIONS = {
   'System administrator': ['location.live.view', 'location.history.view', 'checkin.override.grant', 'geofence.manage',
-    'device.manage', 'staff.view.org', 'report.export', 'aggregate.view', 'admin.roles', 'checkin.own.submit'],
-  'HR administrator': ['staff.view.org', 'report.export', 'aggregate.view', 'checkin.own.submit'],
-  'Head of Department': ['staff.view.dept', 'report.export', 'checkin.own.submit'],
-  'System Analyst': ['location.history.view', 'staff.view.org', 'report.export', 'aggregate.view', 'checkin.own.submit'],
-  'Data & CRM officer': ['checkin.own.submit'],
-  'Employee': ['checkin.own.submit'],
-  'Partner (external)': ['checkin.own.submit'],
+    'device.manage', 'staff.view.org', 'report.export', 'aggregate.view', 'admin.roles', 'checkin.own.submit', 'voice.call'],
+  'HR administrator': ['staff.view.org', 'report.export', 'aggregate.view', 'checkin.own.submit', 'voice.call'],
+  'Head of Department': ['staff.view.dept', 'report.export', 'checkin.own.submit', 'voice.call'],
+  'System Analyst': ['location.history.view', 'staff.view.org', 'report.export', 'aggregate.view', 'checkin.own.submit', 'voice.call'],
+  'Data & CRM officer': ['checkin.own.submit', 'voice.call'],
+  'Employee': ['checkin.own.submit', 'voice.call'],
+  'Partner (external)': ['checkin.own.submit', 'voice.call'],
 };
 
 const ROLES = {
   'System administrator': {
     label: 'System administrator', scope: 'Organisation — full technical administration',
-    screens: ['map', 'devices', 'zones', 'history', 'staff', 'admin', 'exec', 'reports', 'myshift', 'account'],
+    screens: ['map', 'devices', 'zones', 'history', 'staff', 'admin', 'exec', 'reports', 'myshift', 'voip', 'account'],
   },
   'HR administrator': {
     label: 'HR administrator', scope: 'Organisation-wide staff/device coverage — no live location',
-    screens: ['staff', 'exec', 'reports', 'myshift', 'account'],
+    screens: ['staff', 'exec', 'reports', 'myshift', 'voip', 'account'],
   },
   'Head of Department': {
     label: 'Head of Department', scope: 'Own department — progress only, no live location',
-    screens: ['staff', 'reports', 'myshift', 'account'],
+    screens: ['staff', 'reports', 'myshift', 'voip', 'account'],
   },
   'System Analyst': {
     label: 'System Analyst', scope: 'Organisation, read/audit — location history but not live position',
-    screens: ['history', 'staff', 'exec', 'reports', 'myshift', 'account'],
+    screens: ['history', 'staff', 'exec', 'reports', 'myshift', 'voip', 'account'],
   },
   'Data & CRM officer': {
     label: 'Data & CRM officer', scope: 'Self only',
-    screens: ['myshift', 'account'],
+    screens: ['myshift', 'voip', 'account'],
   },
   'Employee': {
     label: 'Employee', scope: 'Self only — own assignment, own handset',
-    screens: ['myshift', 'account'],
+    screens: ['myshift', 'voip', 'account'],
   },
   'Partner (external)': {
     label: 'Partner (external)', scope: 'Self only',
-    screens: ['myshift', 'account'],
+    screens: ['myshift', 'voip', 'account'],
   },
 };
 
@@ -95,6 +97,7 @@ const PERM_ROWS = [
   ['aggregate.view', 'View organisation aggregates'],
   ['report.export', 'Export reports'],
   ['checkin.own.submit', 'Confirm own location at shift check-in'],
+  ['voice.call', 'Make and receive on-net VoIP calls'],
   ['admin.roles', 'Manage the permission matrix'],
 ];
 
@@ -108,6 +111,7 @@ const NAV = [
   ['Workforce', [
     ['staff', 'All employee devices'],
     ['myshift', 'My shift check-in'],
+    ['voip', 'Calls'],
   ]],
   ['Administration', [
     ['admin', 'Users & permissions'],

@@ -15,6 +15,7 @@ const { mfaVerifySchema, loginSchema } = require('../validators/schemas');
 const { ROLES, screensFor } = require('../platform/scope');
 const hris = require('../platform/hris');
 const logger = require('../platform/logger');
+const { gateFor } = require('../platform/locationGate');
 
 const router = express.Router();
 
@@ -62,6 +63,7 @@ router.post('/login', asyncHandler(async (req, res) => {
   }
 
   req.session.user = await sessionUserFor(verdict.employee_no, verdict.full_legal_name);
+  req.session.loggedInAt = Date.now();
   await writeAudit(req, 'login', 'employee_cache', verdict.employee_no, null, null);
   res.json({ ok: true, user: req.session.user });
 }));
@@ -108,6 +110,7 @@ router.post('/login/verify', asyncHandler(async (req, res) => {
   const employeeNo = pending.employeeNo, name = pending.name;
   delete req.session.pendingMfa;
   req.session.user = await sessionUserFor(employeeNo, name);
+  req.session.loggedInAt = Date.now();
   await writeAudit(req, 'login', 'employee_cache', employeeNo, null, { mfa: method });
   res.json({ ok: true, user: req.session.user });
 }));
@@ -119,7 +122,10 @@ router.post('/logout', (req, res) => {
 router.get('/me', requireAuth, asyncHandler(async (req, res) => {
   const roleKeys = await getEffectiveRoleKeys(req.session.user.employeeNo);
   req.session.user.roleKeys = roleKeys;
-  const photoRows = await db.query('SELECT photo_path FROM employee_cache WHERE employee_no = ?', [req.session.user.employeeNo]);
+  const [photoRows, gate] = await Promise.all([
+    db.query('SELECT photo_path FROM employee_cache WHERE employee_no = ?', [req.session.user.employeeNo]),
+    gateFor(req.session.user.employeeNo, req.session.loggedInAt),
+  ]);
   res.json({
     data: {
       employeeNo: req.session.user.employeeNo,
@@ -128,6 +134,7 @@ router.get('/me', requireAuth, asyncHandler(async (req, res) => {
       roleKeys,
       roleLabels: roleKeys.map((k) => ROLES[k]?.label).filter(Boolean),
       screens: screensFor(roleKeys),
+      needsLocationConfirm: gate.needsLocationConfirm,
     },
   });
 }));

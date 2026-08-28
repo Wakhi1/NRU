@@ -76,8 +76,19 @@ const policySchema = z.object({
   shift_end_time: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
 });
 
+// VoIP (architecture doc §8) — `payload` is an opaque SDP blob or ICE candidate, never validated
+// server-side beyond "it parses as JSON" (handled by express.json() before this ever runs).
+const voipCallSchema = z.object({
+  to_employee_no: z.string().min(1).max(20),
+});
+
+const voipSignalSchema = z.object({
+  kind: z.enum(['offer', 'answer', 'ice', 'hangup']),
+  payload: z.any(),
+});
+
 module.exports = {
   loginSchema, zoneSchema, zoneAssignSchema, deviceSchema, checkinSchema, fixSchema,
   overrideDecisionSchema, policySchema, permissionToggleSchema,
-  mfaVerifySchema,
+  mfaVerifySchema, voipCallSchema, voipSignalSchema,
 };

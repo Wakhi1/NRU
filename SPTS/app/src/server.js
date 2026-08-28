@@ -35,6 +35,7 @@ app.use(`${api}/staff`, require('./routes/staff.routes'));
 app.use(`${api}/admin`, require('./routes/admin.routes'));
 app.use(`${api}/exec`, require('./routes/exec.routes'));
 app.use(`${api}/reports`, require('./routes/reports.routes'));
+app.use(`${api}/voip`, require('./routes/voip.routes'));
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
 

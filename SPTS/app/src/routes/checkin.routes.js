@@ -1,21 +1,39 @@
 // The enforced check-in gate (architecture doc §5) — this is the heart of the "employees can
 // clock in" ask. A decision is always computed server-side; the client never grants itself a shift.
+const path = require('path');
+const fs = require('fs');
 const express = require('express');
+const multer = require('multer');
 const db = require('../platform/db');
 const hris = require('../platform/hris');
 const { asyncHandler, badRequest, notFound, forbidden } = require('../platform/errors');
 const { requireAuth, requirePermission } = require('../platform/auth');
 const { writeAudit } = require('../platform/audit');
 const { evaluateZone } = require('../platform/geofence');
+const { getOpenCheckIn, getPolicy, gateFor } = require('../platform/locationGate');
 const { checkinSchema, fixSchema } = require('../validators/schemas');
 
 const router = express.Router();
 router.use(requireAuth);
 
-async function getPolicy() {
-  const rows = await db.query('SELECT * FROM policy WHERE id = 1');
-  return rows[0] || { default_radius_m: 150, accuracy_ceiling_m: 50, recheck_hours: 4, offline_behavior: 'Allow — confirm at next sync', shift_start_time: null, shift_end_time: null };
-}
+// Photographic proof captured at the moment of check-in (architecture doc §7 — "the gallery picker
+// is disabled, an old photograph cannot be passed off as today's"). The browser side only offers
+// the device camera (myshift.js uses `capture="environment"`, no plain file picker), and the server
+// independently refuses to open a shift without a file landing here regardless of what the client
+// claims — same "never a client-side grant" principle as the geofence gate itself.
+const PHOTO_DIR = path.join(__dirname, '..', '..', 'public', 'img', 'checkins');
+fs.mkdirSync(PHOTO_DIR, { recursive: true });
+const uploadCheckinPhoto = multer({
+  storage: multer.diskStorage({
+    destination: PHOTO_DIR,
+    filename: (req, file, cb) => cb(null, `${req.session.user.employeeNo}-${Date.now()}${path.extname(file.originalname).toLowerCase() || '.jpg'}`),
+  }),
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!/^image\/(jpeg|png|webp)$/.test(file.mimetype)) return cb(badRequest('Unsupported image type — use JPEG, PNG or WebP'));
+    cb(null, true);
+  },
+});
 
 // "Rule setting to control flow and movement of enumerators" — architecture doc §10: tracking is
 // bounded by shift hours, outside them no fixes are recorded. Unset (either field null) means no
@@ -31,47 +49,46 @@ function withinShiftWindow(policy) {
   return start <= end ? (cur >= start && cur <= end) : (cur >= start || cur <= end);
 }
 
-async function myOpenCheckIn(employeeNo) {
-  const rows = await db.query(
-    `SELECT ci.*, z.name AS zone_name, z.radius_m AS zone_radius_m, z.center_lat, z.center_lng
-     FROM check_in ci LEFT JOIN zone z ON z.id = ci.zone_id
-     WHERE ci.employee_no = ? AND ci.status = 'open' ORDER BY ci.id DESC LIMIT 1`,
-    [employeeNo]
-  );
-  return rows[0] || null;
-}
-
 router.get('/me', asyncHandler(async (req, res) => {
   const employeeNo = req.session.user.employeeNo;
-  const [open, zones, policy] = await Promise.all([
-    myOpenCheckIn(employeeNo),
+  const [gate, zones] = await Promise.all([
+    gateFor(employeeNo, req.session.loggedInAt),
     db.query(
       `SELECT z.id, z.name, z.kind, z.center_lat, z.center_lng, z.radius_m, z.rule_type
        FROM zone_assignment za JOIN zone z ON z.id = za.zone_id
        WHERE za.employee_no = ? AND z.active = 1`,
       [employeeNo]
     ),
-    getPolicy(),
   ]);
-  res.json({ data: { open, zones, policy } });
+  const { open, policy, needsLocationConfirm } = gate;
+  // Distinguish "no shift at all" (show the clock-in button) from "a shift exists but is stale
+  // relative to this login or the recheck interval" (show reconfirm, not a brand-new clock-in —
+  // the existing open shift blocks a second POST / until it's closed).
+  const needsReconfirm = needsLocationConfirm && !!open && open.status === 'open';
+  res.json({ data: { open, zones, policy, needsLocationConfirm, needsReconfirm } });
 }));
 
-router.post('/', asyncHandler(async (req, res) => {
+router.post('/', uploadCheckinPhoto.single('photo'), asyncHandler(async (req, res) => {
   const parsed = checkinSchema.safeParse(req.body);
   if (!parsed.success) throw badRequest('A valid lat/lng fix is required', parsed.error.flatten());
+  if (!req.file) throw badRequest('A check-in photo is required — take one with your camera to prove you are on site');
   const { lat, lng, accuracy_m, device_id } = parsed.data;
   const employeeNo = req.session.user.employeeNo;
+  const photoPath = `/img/checkins/${req.file.filename}`;
 
-  const existing = await myOpenCheckIn(employeeNo);
-  if (existing) throw badRequest('Already checked in — clock out before starting a new shift');
+  const existing = await getOpenCheckIn(employeeNo);
+  if (existing) {
+    fs.unlink(req.file.path, () => {});
+    throw badRequest('Already checked in — clock out before starting a new shift');
+  }
 
   if (device_id) {
     const dev = await db.query('SELECT * FROM device WHERE id = ?', [device_id]);
     if (!dev[0] || dev[0].assigned_employee_no !== employeeNo) {
       const [ins] = [await db.query(
-        `INSERT INTO check_in (employee_no, device_id, zone_id, lat, lng, accuracy_m, distance_m, decision, status, shift_started_at)
-         VALUES (?,?,?,?,?,?,?,?, 'closed', NOW())`,
-        [employeeNo, device_id, null, lat, lng, accuracy_m || null, null, 'blocked']
+        `INSERT INTO check_in (employee_no, device_id, zone_id, lat, lng, accuracy_m, distance_m, decision, status, photo_path, photo_taken_at, shift_started_at)
+         VALUES (?,?,?,?,?,?,?,?, 'closed', ?, NOW(), NOW())`,
+        [employeeNo, device_id, null, lat, lng, accuracy_m || null, null, 'blocked', photoPath]
       )];
       return res.json({ data: { decision: 'blocked', reason: 'This handset is not assigned to you', check_in_id: ins.insertId } });
     }
@@ -81,9 +98,9 @@ router.post('/', asyncHandler(async (req, res) => {
 
   if (!withinShiftWindow(policy)) {
     const ins = await db.query(
-      `INSERT INTO check_in (employee_no, device_id, zone_id, lat, lng, accuracy_m, distance_m, decision, status, shift_started_at)
-       VALUES (?,?,?,?,?,?,?, 'blocked', 'closed', NOW())`,
-      [employeeNo, device_id || null, null, lat, lng, accuracy_m || null, null]
+      `INSERT INTO check_in (employee_no, device_id, zone_id, lat, lng, accuracy_m, distance_m, decision, status, photo_path, photo_taken_at, shift_started_at)
+       VALUES (?,?,?,?,?,?,?, 'blocked', 'closed', ?, NOW(), NOW())`,
+      [employeeNo, device_id || null, null, lat, lng, accuracy_m || null, null, photoPath]
     );
     return res.json({ data: { decision: 'blocked', reason: `Outside permitted shift hours (${policy.shift_start_time.slice(0, 5)}–${policy.shift_end_time.slice(0, 5)})`, check_in_id: ins.insertId } });
   }
@@ -97,9 +114,9 @@ router.post('/', asyncHandler(async (req, res) => {
 
   if (!accuracyOk) {
     await db.query(
-      `INSERT INTO check_in (employee_no, device_id, zone_id, lat, lng, accuracy_m, distance_m, decision, status, shift_started_at)
-       VALUES (?,?,?,?,?,?,?, 'stale', 'closed', NOW())`,
-      [employeeNo, device_id || null, zones[0]?.id || null, lat, lng, accuracy_m, null]
+      `INSERT INTO check_in (employee_no, device_id, zone_id, lat, lng, accuracy_m, distance_m, decision, status, photo_path, photo_taken_at, shift_started_at)
+       VALUES (?,?,?,?,?,?,?, 'stale', 'closed', ?, NOW(), NOW())`,
+      [employeeNo, device_id || null, zones[0]?.id || null, lat, lng, accuracy_m, null, photoPath]
     );
     return res.json({ data: { decision: 'stale', reason: `Fix accuracy ${accuracy_m}m exceeds the ${policy.accuracy_ceiling_m}m policy ceiling — get a better fix and try again` } });
   }
@@ -124,18 +141,18 @@ router.post('/', asyncHandler(async (req, res) => {
       if (e.status !== 409) throw e; // 409 = already clocked in on the HRIS side; proceed with SPTS's own record anyway
     }
     const result = await db.query(
-      `INSERT INTO check_in (employee_no, device_id, zone_id, lat, lng, accuracy_m, distance_m, decision, status, hris_timer_id, shift_started_at)
-       VALUES (?,?,?,?,?,?,?, 'confirmed', 'open', ?, NOW())`,
-      [employeeNo, device_id || null, best.zone.id, lat, lng, accuracy_m || null, best.eval.distance_m, hrisTimerId]
+      `INSERT INTO check_in (employee_no, device_id, zone_id, lat, lng, accuracy_m, distance_m, decision, status, hris_timer_id, photo_path, photo_taken_at, reconfirmed_at, shift_started_at)
+       VALUES (?,?,?,?,?,?,?, 'confirmed', 'open', ?, ?, NOW(), NOW(), NOW())`,
+      [employeeNo, device_id || null, best.zone.id, lat, lng, accuracy_m || null, best.eval.distance_m, hrisTimerId, photoPath]
     );
     await writeAudit(req, 'checkin.confirmed', 'check_in', result.insertId, null, { zone: best.zone.name, distance_m: best.eval.distance_m });
     return res.json({ data: { decision: 'confirmed', check_in_id: result.insertId, zone: best.zone.name, distance_m: best.eval.distance_m } });
   }
 
   const insRes = await db.query(
-    `INSERT INTO check_in (employee_no, device_id, zone_id, lat, lng, accuracy_m, distance_m, decision, status, shift_started_at)
-     VALUES (?,?,?,?,?,?,?, 'outside', 'open', NOW())`,
-    [employeeNo, device_id || null, best.zone.id, lat, lng, accuracy_m || null, best.eval.distance_m]
+    `INSERT INTO check_in (employee_no, device_id, zone_id, lat, lng, accuracy_m, distance_m, decision, status, photo_path, photo_taken_at, shift_started_at)
+     VALUES (?,?,?,?,?,?,?, 'outside', 'open', ?, NOW(), NOW())`,
+    [employeeNo, device_id || null, best.zone.id, lat, lng, accuracy_m || null, best.eval.distance_m, photoPath]
   );
   await db.query(
     `INSERT INTO override_request (check_in_id, employee_no, reason) VALUES (?,?,?)`,
@@ -146,6 +163,62 @@ router.post('/', asyncHandler(async (req, res) => {
     [employeeNo, best.zone.id, `${best.eval.distance_m}m from ${best.zone.name}`]
   );
   res.json({ data: { decision: 'outside', check_in_id: insRes.insertId, zone: best.zone.name, distance_m: best.eval.distance_m } });
+}));
+
+// Re-verifies location on an already-open shift without starting a new one — used both for the
+// recheck-interval nudge (policy.recheck_hours) and for the "confirm again, you just logged in"
+// gate (locationGate.needsConfirmation) when a shift was left open from a previous session. No new
+// photo is required here: the photographic proof is tied to opening the shift, not to every
+// re-verification, matching the doc's recheck description ("re-confirmation interval, default 4h")
+// which only ever mentions position, never a repeat selfie.
+router.post('/:id/reconfirm', asyncHandler(async (req, res) => {
+  const parsed = fixSchema.safeParse(req.body);
+  if (!parsed.success) throw badRequest('A valid lat/lng fix is required');
+  const employeeNo = req.session.user.employeeNo;
+  const { lat, lng, accuracy_m } = parsed.data;
+
+  const rows = await db.query(
+    `SELECT ci.*, z.name AS zone_name, z.radius_m AS zone_radius_m, z.center_lat, z.center_lng
+     FROM check_in ci LEFT JOIN zone z ON z.id = ci.zone_id
+     WHERE ci.id = ? AND ci.employee_no = ? AND ci.status = 'open'`,
+    [req.params.id, employeeNo]
+  );
+  const open = rows[0];
+  if (!open) throw notFound('No open shift with that id');
+
+  await db.query(
+    `INSERT INTO location_fix (check_in_id, employee_no, lat, lng, accuracy_m, captured_at) VALUES (?,?,?,?,?, NOW())`,
+    [open.id, employeeNo, lat, lng, accuracy_m || null]
+  );
+
+  if (!open.zone_id) {
+    await db.query(`UPDATE check_in SET reconfirmed_at = NOW() WHERE id = ?`, [open.id]);
+    return res.json({ data: { decision: 'confirmed' } });
+  }
+
+  const policy = await getPolicy();
+  const zone = { center_lat: open.center_lat, center_lng: open.center_lng, radius_m: open.zone_radius_m };
+  const evalResult = evaluateZone(zone, lat, lng, accuracy_m, policy);
+
+  if (evalResult.inside) {
+    await db.query(`UPDATE check_in SET reconfirmed_at = NOW(), decision = 'confirmed' WHERE id = ?`, [open.id]);
+    await writeAudit(req, 'checkin.reconfirmed', 'check_in', open.id, null, { distance_m: evalResult.distance_m });
+    return res.json({ data: { decision: 'confirmed', zone: open.zone_name, distance_m: evalResult.distance_m } });
+  }
+
+  await db.query(`UPDATE check_in SET decision = 'outside' WHERE id = ?`, [open.id]);
+  const pending = await db.query(`SELECT id FROM override_request WHERE check_in_id = ? AND status = 'pending'`, [open.id]);
+  if (pending.length === 0) {
+    await db.query(
+      `INSERT INTO override_request (check_in_id, employee_no, reason) VALUES (?,?,?)`,
+      [open.id, employeeNo, `${evalResult.distance_m}m outside ${open.zone_name} at reconfirmation`]
+    );
+    await db.query(
+      `INSERT INTO alert (severity, employee_no, zone_id, kind, note) VALUES ('med', ?, ?, 'Reconfirmation outside assigned zone', ?)`,
+      [employeeNo, open.zone_id, `${evalResult.distance_m}m from ${open.zone_name}`]
+    );
+  }
+  res.json({ data: { decision: 'outside', zone: open.zone_name, distance_m: evalResult.distance_m } });
 }));
 
 router.post('/:id/close', asyncHandler(async (req, res) => {
@@ -199,7 +272,7 @@ router.post('/:id/fix', asyncHandler(async (req, res) => {
 
 router.get('/overrides', requirePermission('checkin.override.grant'), asyncHandler(async (req, res) => {
   const rows = await db.query(
-    `SELECT o.*, e.full_legal_name, ci.distance_m, ci.zone_id, z.name AS zone_name
+    `SELECT o.*, e.full_legal_name, ci.distance_m, ci.zone_id, ci.photo_path, z.name AS zone_name
      FROM override_request o
      JOIN employee_cache e ON e.employee_no = o.employee_no
      JOIN check_in ci ON ci.id = o.check_in_id
@@ -228,7 +301,7 @@ router.post('/overrides/:id/decide', requirePermission('checkin.override.grant')
       hrisTimerId = timer.id;
     } catch (e) { if (e.status !== 409) throw e; }
     await db.query(
-      `UPDATE check_in SET decision='confirmed', override_by_employee_no=?, override_reason=?, hris_timer_id = COALESCE(hris_timer_id, ?) WHERE id = ?`,
+      `UPDATE check_in SET decision='confirmed', reconfirmed_at = NOW(), override_by_employee_no=?, override_reason=?, hris_timer_id = COALESCE(hris_timer_id, ?) WHERE id = ?`,
       [req.session.user.employeeNo, rows[0].reason, hrisTimerId, rows[0].check_in_id]
     );
   } else {

@@ -77,19 +77,6 @@ CREATE TABLE IF NOT EXISTS org_unit_cache (
   synced_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Temporary elevation (architecture doc §3.5) — expires on its own, never renewed silently.
-CREATE TABLE IF NOT EXISTS elevation (
-  id                     INT AUTO_INCREMENT PRIMARY KEY,
-  employee_no            VARCHAR(20) NOT NULL,
-  role_key               VARCHAR(40) NOT NULL,
-  reason                 VARCHAR(255) NOT NULL,
-  granted_by_employee_no VARCHAR(20) NOT NULL,
-  expires_at             DATETIME NOT NULL,
-  revoked_at             DATETIME NULL,
-  created_at             TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_elevation_employee FOREIGN KEY (employee_no) REFERENCES employee_cache(employee_no) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 -- Handset registry (architecture doc §4.2 Device & Fleet) — distinct from the HRIS's own
 -- `devices:read` (VoIP extension info); this is the tracked physical handset.
 CREATE TABLE IF NOT EXISTS device (
@@ -160,6 +147,13 @@ CREATE TABLE IF NOT EXISTS check_in (
   hris_timer_id          INT NULL,
   override_by_employee_no VARCHAR(20) NULL,
   override_reason        VARCHAR(255) NULL,
+  -- Photographic proof (architecture doc §7) taken in-app at the moment of check-in — the
+  -- selfie IS the login, same as the GPS fix. `reconfirmed_at` backs the recheck-interval gate
+  -- (policy.recheck_hours, doc §5): the most recent time this shift's position was re-verified,
+  -- starting as the check-in moment itself and advanced by POST /checkin/:id/reconfirm.
+  photo_path             VARCHAR(255) NULL,
+  photo_taken_at         DATETIME NULL,
+  reconfirmed_at         DATETIME NULL,
   shift_started_at       DATETIME NOT NULL,
   shift_ended_at         DATETIME NULL,
   created_at             TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -168,6 +162,11 @@ CREATE TABLE IF NOT EXISTS check_in (
   CONSTRAINT fk_checkin_zone FOREIGN KEY (zone_id) REFERENCES zone(id) ON DELETE SET NULL,
   CONSTRAINT fk_checkin_override_by FOREIGN KEY (override_by_employee_no) REFERENCES employee_cache(employee_no) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- Idempotent for databases migrated before these columns existed — migrate.js swallows the
+-- "duplicate column" error (1060) the same way it already swallows "duplicate key" (1061).
+ALTER TABLE check_in ADD COLUMN photo_path VARCHAR(255) NULL;
+ALTER TABLE check_in ADD COLUMN photo_taken_at DATETIME NULL;
+ALTER TABLE check_in ADD COLUMN reconfirmed_at DATETIME NULL;
 
 -- A check-in that failed the gate and is waiting on a supervisor override (architecture doc §5.6).
 CREATE TABLE IF NOT EXISTS override_request (
@@ -261,3 +260,55 @@ CREATE TABLE IF NOT EXISTS audit_event (
   created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE INDEX idx_audit_created ON audit_event(created_at);
+
+-- Voice over IP (architecture doc §8) — "voice is carried on the same data bundle as the forms,
+-- no separate airtime line." One extension per person, auto-provisioned the first time they open
+-- the app (see routes/voip.routes.js); de-provisioning follows employee_cache the same way every
+-- other per-person row here does (ON DELETE CASCADE — an exited employee's extension goes with
+-- them at the next reconciliation). Presence is derived from `last_seen_at`, a heartbeat every
+-- app page posts every ~20s (doc: "presence comes from device state already known to the tracking
+-- system") — there is no separate "set my status" control anywhere.
+CREATE TABLE IF NOT EXISTS voip_extension (
+  employee_no   VARCHAR(20) PRIMARY KEY,
+  extension     VARCHAR(10) NOT NULL UNIQUE,
+  last_seen_at  DATETIME NULL,
+  created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_voipext_employee FOREIGN KEY (employee_no) REFERENCES employee_cache(employee_no) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- One row per call attempt. `direction` is always 'on_net' for now — handset-to-handset over the
+-- data bundle, the whole point of §8. Off-net (public number) breakout needs a SIP trunk provider,
+-- which is a real-world procurement decision, not something this build can wire up on its own; the
+-- column is here so that work slots in later without a schema change.
+CREATE TABLE IF NOT EXISTS call_detail_record (
+  id                    INT AUTO_INCREMENT PRIMARY KEY,
+  caller_employee_no    VARCHAR(20) NOT NULL,
+  callee_employee_no    VARCHAR(20) NOT NULL,
+  direction             ENUM('on_net','off_net') NOT NULL DEFAULT 'on_net',
+  status                ENUM('ringing','answered','missed','declined','ended') NOT NULL DEFAULT 'ringing',
+  started_at            DATETIME NOT NULL,
+  answered_at           DATETIME NULL,
+  ended_at              DATETIME NULL,
+  duration_s            INT NULL,
+  created_at            TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_cdr_caller FOREIGN KEY (caller_employee_no) REFERENCES employee_cache(employee_no) ON DELETE CASCADE,
+  CONSTRAINT fk_cdr_callee FOREIGN KEY (callee_employee_no) REFERENCES employee_cache(employee_no) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE INDEX idx_cdr_caller ON call_detail_record(caller_employee_no, created_at);
+CREATE INDEX idx_cdr_callee ON call_detail_record(callee_employee_no, created_at);
+
+-- WebRTC signaling mailbox — SDP offer/answer and ICE candidates exchanged by short-poll (same
+-- polling pattern myshift.js already uses for override requests), not a websocket server. Once
+-- both sides have exchanged an offer/answer and enough candidates, audio flows peer-to-peer over
+-- the data connection directly; this table only carries the handshake, never the voice itself.
+CREATE TABLE IF NOT EXISTS voip_signal (
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  call_id           INT NOT NULL,
+  from_employee_no  VARCHAR(20) NOT NULL,
+  to_employee_no    VARCHAR(20) NOT NULL,
+  kind              ENUM('offer','answer','ice','hangup') NOT NULL,
+  payload           TEXT NOT NULL,
+  created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_signal_call FOREIGN KEY (call_id) REFERENCES call_detail_record(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE INDEX idx_signal_poll ON voip_signal(call_id, to_employee_no, id);

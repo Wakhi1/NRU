@@ -5,6 +5,32 @@
 let map, zoneCircles = [], meMarker, trackLine, trackPoints = [];
 let watchId = null, lastPostAt = 0, pollTimer = null;
 const FIX_INTERVAL_MS = 25000;
+let capturedPhoto = null, capturedPhotoUrl = null;
+let trackingActive = false; // explicit start/stop control — tracking no longer begins on its own
+
+// Camera capture for the check-in proof photo (architecture doc §7 — "captured in-app only, the
+// gallery picker is disabled"). `capture="environment"` on a file input opens the device camera
+// directly on Android/iOS Chrome/Safari rather than a file browser, so there is no picker to swap
+// in an old photo from — the same guarantee the doc asks for, without a custom camera UI.
+function pickPhoto() {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.addEventListener('change', () => resolve(input.files[0] || null), { once: true });
+    input.click();
+  });
+}
+
+async function capturePhoto(onDone) {
+  const file = await pickPhoto();
+  if (!file) return;
+  capturedPhoto = file;
+  if (capturedPhotoUrl) URL.revokeObjectURL(capturedPhotoUrl);
+  capturedPhotoUrl = URL.createObjectURL(file);
+  onDone();
+}
 
 function decisionCopy(d) {
   return {
@@ -54,17 +80,61 @@ function pushTrackPoint(lat, lng) {
   else trackLine = L.polyline(trackPoints, { color: '#1c8a63', weight: 3, opacity: 0.85 }).addTo(map);
 }
 
+function photoCaptureHtml() {
+  return `
+    <div class="form-row">
+      <label>Check-in photo — required</label>
+      ${capturedPhotoUrl
+        ? `<img src="${capturedPhotoUrl}" alt="Check-in proof" style="width:100%;max-width:220px;border:1px solid var(--color-neutral-300);">
+           <button class="btn btn-ghost btn-sm" id="retake-btn" style="margin-top:6px;width:fit-content;">Retake photo</button>`
+        : `<button class="btn btn-ghost" id="capture-btn">📷 Take photo</button>`}
+      <p class="field-hint">Taken with your camera at check-in — proof you're on site (architecture doc §7).</p>
+    </div>`;
+}
+
+function wirePhotoCapture(onChange) {
+  const captureBtn = document.getElementById('capture-btn');
+  const retakeBtn = document.getElementById('retake-btn');
+  if (captureBtn) captureBtn.addEventListener('click', () => capturePhoto(onChange));
+  if (retakeBtn) retakeBtn.addEventListener('click', () => capturePhoto(onChange));
+}
+
 function renderPanel(state) {
   const panel = document.getElementById('panel');
-  const { open, zones } = state;
+  const { open, zones, needsReconfirm } = state;
+
+  if (open && open.status === 'open' && needsReconfirm) {
+    panel.innerHTML = `
+      <div class="gate-status gate-outside"><b>Reconfirm your location</b></div>
+      <p>You're on shift in <b>${esc(open.zone_name || 'your zone')}</b>, but your position needs to be
+      re-verified — either the recheck interval has passed, or you've signed in again since it was last
+      confirmed. Collecting is paused until you confirm where you are.</p>
+      <button class="btn btn-primary btn-lg" id="reconfirm-btn">Confirm my location</button>
+      <div id="gate-result" style="margin-top:14px;"></div>
+      <div class="divider"></div>
+      <button class="btn btn-ghost btn-sm" id="clockout-btn">Clock out instead</button>`;
+    document.getElementById('reconfirm-btn').addEventListener('click', () => attemptReconfirm(open.id));
+    document.getElementById('clockout-btn').addEventListener('click', () => clockOut(open.id));
+    return;
+  }
 
   if (open && open.status === 'open') {
     const started = fmtTime(open.shift_started_at);
     panel.innerHTML = `
-      <div class="gate-status gate-confirmed"><b>On shift</b></div>
+      <div class="gate-status gate-confirmed"><b>On shift</b> ${trackingActive ? '<span class="badge badge-success live" style="margin-left:8px;">● Live</span>' : ''}</div>
       <p><b>Zone:</b> ${esc(open.zone_name || '—')}<br><b>Started:</b> ${started}<br><b>Distance at check-in:</b> ${open.distance_m ?? '—'} m</p>
-      <button class="btn btn-danger btn-lg" id="clockout-btn">Clock out</button>
-      <p class="note" style="margin-top:12px;">Your position is being recorded every ${FIX_INTERVAL_MS / 1000}s while this shift is open — see it appear on the map as a track.</p>`;
+      ${open.photo_path ? `<img src="${esc(open.photo_path)}" alt="Check-in proof" style="width:100%;max-width:160px;border:1px solid var(--color-neutral-300);margin-bottom:10px;">` : ''}
+      ${trackingActive
+        ? `<button class="btn btn-ghost btn-lg" id="track-toggle-btn">■ Stop live tracking</button>
+           <p class="note" style="margin-top:12px;">Your position is being recorded every ${FIX_INTERVAL_MS / 1000}s — see it appear on the map as a track.</p>`
+        : `<button class="btn btn-primary btn-lg" id="track-toggle-btn">▶ Start live tracking</button>
+           <p class="field-hint" style="margin-top:8px;">Nothing is recorded until you start it — this is separate from the check-in that opened your shift.</p>`}
+      <div class="divider"></div>
+      <button class="btn btn-danger btn-sm" id="clockout-btn">Clock out</button>`;
+    document.getElementById('track-toggle-btn').addEventListener('click', () => {
+      if (trackingActive) { stopTracking(); trackingActive = false; } else { startTracking(open.id); trackingActive = true; }
+      renderPanel(state);
+    });
     document.getElementById('clockout-btn').addEventListener('click', () => clockOut(open.id));
     return;
   }
@@ -73,10 +143,12 @@ function renderPanel(state) {
     ? zones.map((z) => `<span class="badge badge-info">${esc(z.name)}</span>`).join(' ')
     : '<span class="badge badge-neutral">No zone assigned yet</span>';
   panel.innerHTML = `
-    <p>You are not on shift.</p>
+    <p>You are not on shift. Location confirmation is required before you can start collecting.</p>
     <p><b>Your assigned zone${zones.length === 1 ? '' : 's'}:</b><br>${zoneChips}</p>
-    <button class="btn btn-primary btn-lg" id="clockin-btn">Clock in</button>
+    ${photoCaptureHtml()}
+    <button class="btn btn-primary btn-lg" id="clockin-btn" ${capturedPhoto ? '' : 'disabled'}>Clock in</button>
     <div id="gate-result" style="margin-top:14px;"></div>`;
+  wirePhotoCapture(() => renderPanel(state));
   document.getElementById('clockin-btn').addEventListener('click', attemptClockIn);
 }
 
@@ -87,9 +159,11 @@ async function loadState() {
   renderRecent();
   if (data.open && data.open.status === 'open') {
     if (data.open.lat) placeMe(data.open.lat, data.open.lng);
-    startTracking(data.open.id);
+    // Tracking is opt-in via the "Start live tracking" button (renderPanel) — not resumed
+    // automatically on load/refresh, so it stays off after a page reload until clicked again.
   } else {
     stopTracking();
+    trackingActive = false;
     try {
       const fix = await getFix();
       placeMe(fix.lat, fix.lng);
@@ -102,17 +176,45 @@ async function loadState() {
 async function attemptClockIn() {
   const btn = document.getElementById('clockin-btn');
   const resultBox = document.getElementById('gate-result');
+  if (!capturedPhoto) { resultBox.innerHTML = `<div class="gate-status gate-blocked"><b>Take a check-in photo first</b></div>`; return; }
   try {
     const fix = await Api.withLoading(btn, 'Getting GPS fix…', getFix);
     placeMe(fix.lat, fix.lng);
-    const { data } = await Api.post('/checkin', fix);
+    const form = new FormData();
+    form.append('lat', fix.lat);
+    form.append('lng', fix.lng);
+    if (fix.accuracy_m != null) form.append('accuracy_m', fix.accuracy_m);
+    form.append('photo', capturedPhoto);
+    const { data } = await Api.postForm('/checkin', form);
     const copy = decisionCopy(data.decision);
     resultBox.innerHTML = `<div class="gate-status ${copy.cls}"><div><b>${esc(copy.title)}</b><br>
       ${data.zone ? `${esc(data.zone)} — ${data.distance_m}m` : ''} ${esc(data.reason || copy.body)}</div></div>`;
     if (data.decision === 'confirmed') {
+      capturedPhoto = null; capturedPhotoUrl = null;
       setTimeout(loadState, 600);
     } else if (data.decision === 'outside') {
       pollForOverride(data.check_in_id);
+    }
+  } catch (e) {
+    resultBox.innerHTML = `<div class="gate-status gate-blocked"><b>${esc(e.message)}</b></div>`;
+  }
+}
+
+async function attemptReconfirm(checkInId) {
+  const btn = document.getElementById('reconfirm-btn');
+  const resultBox = document.getElementById('gate-result');
+  try {
+    const fix = await Api.withLoading(btn, 'Getting GPS fix…', getFix);
+    placeMe(fix.lat, fix.lng);
+    const { data } = await Api.post(`/checkin/${checkInId}/reconfirm`, fix);
+    const copy = decisionCopy(data.decision);
+    resultBox.innerHTML = `<div class="gate-status ${copy.cls}"><div><b>${esc(copy.title)}</b><br>
+      ${data.zone ? `${esc(data.zone)} — ${data.distance_m}m` : ''} ${esc(data.reason || copy.body)}</div></div>`;
+    if (data.decision === 'confirmed') {
+      Api.toast('Location reconfirmed — you can collect again');
+      setTimeout(loadState, 600);
+    } else if (data.decision === 'outside') {
+      pollForOverride(checkInId);
     }
   } catch (e) {
     resultBox.innerHTML = `<div class="gate-status gate-blocked"><b>${esc(e.message)}</b></div>`;
@@ -134,6 +236,7 @@ function pollForOverride(checkInId) {
 async function clockOut(id) {
   await Api.post(`/checkin/${id}/close`);
   stopTracking();
+  trackingActive = false;
   Api.toast('Clocked out');
   loadState();
 }

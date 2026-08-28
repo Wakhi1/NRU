@@ -9,6 +9,7 @@ const NAV = [
   ['Workforce', [
     ['staff', 'All employee devices'],
     ['myshift', 'My shift check-in'],
+    ['voip', 'Calls'],
   ]],
   ['Administration', [
     ['admin', 'Users & permissions'],
@@ -129,11 +130,26 @@ const Shell = (() => {
   async function init(activeScreen) {
     const [{ data }, branding] = await Promise.all([Api.get('/auth/me'), getBranding()]);
     me = data;
+    // "Enforce location confirmation before they start collecting — every time after login."
+    // A fresh sign-in always starts with this flag set (see auth.routes.js's loggedInAt stamp);
+    // every screen but the check-in gate itself is off-limits until it clears.
+    if (me.needsLocationConfirm && activeScreen !== 'myshift') {
+      window.location.href = '/myshift.html';
+      throw new Error('location-confirm-required');
+    }
     if (activeScreen && !me.screens.includes(activeScreen)) {
       document.getElementById('app').innerHTML = `<div class="empty-state">Your role does not include this screen.<br><a href="/${me.screens[0] || 'myshift'}.html">Go back</a></div>`;
       throw new Error('forbidden-screen');
     }
     render(activeScreen, branding);
+    // Presence heartbeat + incoming-call banner (architecture doc §8) — starts once per page load
+    // and keeps running regardless of which screen this is, so a call can ring anywhere in the app.
+    // Gated on the permission (not the screen list) since it has no page of its own to fail into.
+    // NOTE: voip-call.js declares `const VoipCall`, a top-level lexical binding — unlike `var` or
+    // a function declaration, that does NOT become a `window` property, so `window.VoipCall` is
+    // always undefined even though the bare name resolves fine (both files share the same global
+    // script scope). Check with `typeof`, not a `window.` property lookup.
+    if (me.screens.includes('voip') && typeof VoipCall !== 'undefined') VoipCall.start();
     return me;
   }
 

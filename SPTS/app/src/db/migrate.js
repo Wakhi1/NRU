@@ -6,6 +6,7 @@ const path = require('path');
 const mysql = require('mysql2/promise');
 
 const ER_DUP_KEYNAME = 1061;
+const ER_DUP_FIELDNAME = 1060; // ALTER TABLE ADD COLUMN on a column that already exists — see schema.sql's check_in additions
 const cfg = {
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT || 3306),
@@ -35,7 +36,7 @@ async function migrate() {
     try {
       await conn.query(statement);
     } catch (err) {
-      if (err.errno === ER_DUP_KEYNAME) continue;
+      if (err.errno === ER_DUP_KEYNAME || err.errno === ER_DUP_FIELDNAME) continue;
       console.error('[migrate] failed statement:\n', statement);
       await conn.end();
       throw err;

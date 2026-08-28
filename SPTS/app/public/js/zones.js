@@ -126,7 +126,8 @@ function reviewOverride(o) {
         { key: 'requested', label: 'Requested', value: fmtTime(o.created_at) },
       ] },
     ],
-    extraHtml: `<div class="row" style="gap:8px;justify-content:flex-end;margin-top:12px;">
+    extraHtml: `${o.photo_path ? `<img src="${esc(o.photo_path)}" alt="Check-in proof" style="width:100%;max-width:220px;border:1px solid var(--color-neutral-300);margin-bottom:10px;">` : ''}
+    <div class="row" style="gap:8px;justify-content:flex-end;margin-top:12px;">
       <button class="btn btn-danger btn-sm" id="ov-deny">Deny</button>
       <button class="btn btn-primary btn-sm" id="ov-grant">Grant override</button>
     </div>`,

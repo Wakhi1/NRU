@@ -19,6 +19,19 @@ const Api = (() => {
   const put = (path, body) => request(path, { method: 'PUT', body });
   const del = (path) => request(path, { method: 'DELETE' });
 
+  // For multipart uploads (check-in photos, branding images) — no Content-Type header so the
+  // browser sets the multipart boundary itself, and no JSON.stringify since body is a FormData.
+  async function postForm(path, formData) {
+    const res = await fetch(`/api/v1${path}`, { method: 'POST', body: formData, credentials: 'same-origin' });
+    if (res.status === 401 && !path.startsWith('/auth')) {
+      window.location.href = '/login.html';
+      return new Promise(() => {});
+    }
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload.error || `Request failed (${res.status})`);
+    return payload;
+  }
+
   async function withLoading(btn, busyLabel, fn) {
     const original = btn.textContent;
     btn.disabled = true;
@@ -41,5 +54,5 @@ const Api = (() => {
     setTimeout(() => el.remove(), 4000);
   }
 
-  return { get, post, put, del, withLoading, toast };
+  return { get, post, put, del, postForm, withLoading, toast };
 })();
